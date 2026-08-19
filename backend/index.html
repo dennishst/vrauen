@@ -164,6 +164,27 @@
   .modal-actions{display:flex;gap:10px;margin-top:6px;}
   .modal-actions .btn{flex:1;}
   .btn-secondary{background:transparent;border:1.5px solid var(--navy);color:var(--navy);}
+
+  /* ---------- Events ---------- */
+  .event-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;}
+  .event-card{
+    background:var(--white);border-radius:18px;overflow:hidden;
+    box-shadow:0 12px 30px -22px rgba(20,63,100,0.35);display:flex;flex-direction:column;
+  }
+  .event-card .img-wrap{width:100%;aspect-ratio:1/1;background:var(--pink-card);overflow:hidden;}
+  .event-card .img-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+  .event-card .img-wrap.placeholder{display:flex;align-items:center;justify-content:center;color:var(--navy);opacity:0.35;font-size:13px;}
+  .event-card .body{padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:6px;}
+  .event-card h4{font-size:16px;font-family:var(--display);font-weight:700;}
+  .event-card .meta{font-size:12.5px;opacity:0.7;}
+  .event-card .desc{font-size:13px;opacity:0.85;margin-top:2px;flex:1;}
+  .event-card .footer{padding:0 18px 16px;display:flex;gap:8px;flex-wrap:wrap;}
+  .img-upload{
+    border:1.5px dashed #D8D8D8;border-radius:14px;padding:16px;text-align:center;cursor:pointer;
+    font-size:13px;color:var(--navy);opacity:0.75;
+  }
+  .img-upload:hover{opacity:1;border-color:var(--navy);}
+  .img-preview{width:120px;height:120px;border-radius:12px;object-fit:cover;margin:0 auto 10px;display:block;}
 </style>
 </head>
 <body>
@@ -207,6 +228,7 @@
       <button class="tab-btn" data-tab="subscribers">Newsletteranmeldungen <span class="count-pill" id="countSubs">0</span></button>
       <button class="tab-btn" data-tab="newsletter">Newsletter erstellen</button>
       <button class="tab-btn" data-tab="submissions">Einreichungen <span class="count-pill" id="countSubm">0</span></button>
+      <button class="tab-btn" data-tab="events">Events <span class="count-pill" id="countEvents">0</span></button>
     </div>
 
     <!-- ---------- MITGLIEDER ---------- -->
@@ -272,6 +294,17 @@
         <div id="submissionsContent" class="loading">Lädt…</div>
       </div>
     </div>
+
+    <!-- ---------- EVENTS ---------- -->
+    <div class="panel" id="panel-events">
+      <div class="toolbar">
+        <div class="toolbar-actions">
+          <button class="refresh-btn" onclick="loadEvents()">Aktualisieren</button>
+        </div>
+        <button class="add-btn" onclick="openEventModal()">+ Event erstellen</button>
+      </div>
+      <div id="eventsContent" class="loading">Lädt…</div>
+    </div>
   </main>
 </div>
 
@@ -302,6 +335,45 @@
         <button type="submit" class="btn" id="memberSaveBtn">Speichern</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ===== EVENT MODAL ===== -->
+<div class="modal-overlay" id="eventModalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeEventModal()" aria-label="Schließen">&times;</button>
+    <h3 id="eventModalTitle">Event erstellen</h3>
+    <form id="eventForm">
+      <input type="hidden" id="ev-id">
+      <input type="hidden" id="ev-bild-url">
+      <div class="field">
+        <label>Bild (quadratisch, 1:1)</label>
+        <img id="ev-img-preview" class="img-preview" style="display:none;">
+        <label class="img-upload" id="ev-img-upload-label">
+          <span id="ev-img-upload-text">Bild auswählen…</span>
+          <input type="file" id="ev-bild" accept="image/*" style="display:none;">
+        </label>
+      </div>
+      <div class="field"><label for="ev-name">Name *</label><input type="text" id="ev-name" required></div>
+      <div class="field"><label for="ev-ort">Ort</label><input type="text" id="ev-ort"></div>
+      <div class="field"><label for="ev-beschreibung">Beschreibung</label><textarea id="ev-beschreibung"></textarea></div>
+      <div class="field"><label for="ev-datum">Datum *</label><input type="date" id="ev-datum" required></div>
+      <div class="field"><label for="ev-zeit">Zeit</label><input type="time" id="ev-zeit"></div>
+      <label class="field-check"><input type="checkbox" id="ev-anmeldung" checked><span>Anmeldung ermöglichen</span></label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Abbrechen</button>
+        <button type="submit" class="btn" id="eventSaveBtn">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== TEILNEHMERINNEN MODAL ===== -->
+<div class="modal-overlay" id="attendeesModalOverlay">
+  <div class="modal-box" style="max-width:600px;">
+    <button class="modal-close" onclick="closeAttendeesModal()" aria-label="Schließen">&times;</button>
+    <h3 id="attendeesModalTitle">Teilnehmerinnen</h3>
+    <div id="attendeesContent" class="loading">Lädt…</div>
   </div>
 </div>
 
@@ -344,6 +416,7 @@
     loadSubscribers();
     loadSubmissions();
     loadNewsletters();
+    loadEvents();
   }
 
   /* ---------- Demo-Daten ---------- */
@@ -367,6 +440,17 @@
   const DEMO_NEWSLETTERS = [
     { id:'dn-1', subject:'VRauen Newsletter — August 2026', body:'Liebe VRauen…', status:'entwurf', created_at:'2026-08-15T10:00:00Z' }
   ];
+  const DEMO_EVENTS = [
+    { id:'de-1', name:'VRauen Netzwerktreffen Herbst', ort:'MakerPort Stralsund', beschreibung:'Unser halbjährliches Treffen mit Vorträgen und Networking.', datum:'2026-09-24', zeit:'18:00', bild_url:null, anmeldung_moeglich:true },
+    { id:'de-2', name:'Workshop: Sichtbarkeit als Speakerin', ort:'Online', beschreibung:'Praxisworkshop für mehr Sichtbarkeit auf Podien.', datum:'2026-10-12', zeit:'16:00', bild_url:null, anmeldung_moeglich:false }
+  ];
+  const DEMO_REGISTRATIONS = {
+    'de-1': [
+      { id:'dr-1', vorname:'Merle', nachname:'Drüding', email:'merle@example.de', created_at:'2026-08-10T10:00:00Z' },
+      { id:'dr-2', vorname:'Karen', nachname:'Hoppenrath', email:'karen.h@vp-ruegen.de', created_at:'2026-08-12T09:00:00Z' }
+    ],
+    'de-2': []
+  };
 
   document.getElementById('demoLink').addEventListener('click', (e) => {
     e.preventDefault();
@@ -378,6 +462,7 @@
     renderSubscribers(DEMO_SUBSCRIBERS);
     renderSubmissions(DEMO_SUBMISSIONS);
     renderNewsletters(DEMO_NEWSLETTERS);
+    renderEvents(DEMO_EVENTS);
   });
 
   loginForm.addEventListener('submit', async (e) => {
@@ -696,6 +781,227 @@
     }
     const { error } = await sb.from('form_submissions').update({ read: true }).eq('id', id);
     if (!error) loadSubmissions();
+  }
+
+  /* ============================================================
+     EVENTS
+     ============================================================ */
+  let pendingEventFile = null;
+
+  async function loadEvents(){
+    const el = document.getElementById('eventsContent');
+    el.className = 'loading'; el.textContent = 'Lädt…';
+    const { data, error } = await sb.from('events').select('*').order('datum', { ascending: true });
+    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+    renderEvents(data);
+  }
+
+  function fmtDatum(d, z){
+    if(!d) return '—';
+    const [y,m,day] = d.split('-');
+    return `${day}.${m}.${y}` + (z ? ' · ' + z.slice(0,5) + ' Uhr' : '');
+  }
+
+  function renderEvents(data){
+    const el = document.getElementById('eventsContent');
+    document.getElementById('countEvents').textContent = data.length;
+    if (data.length === 0){
+      el.className = 'empty-state';
+      el.textContent = 'Noch keine Events erstellt.';
+      return;
+    }
+    el.className = '';
+    el.innerHTML = `<div class="event-grid">
+      ${data.map(row => `
+        <div class="event-card">
+          <div class="img-wrap ${row.bild_url ? '' : 'placeholder'}">
+            ${row.bild_url ? `<img src="${escapeHTML(row.bild_url)}" alt="">` : 'Kein Bild'}
+          </div>
+          <div class="body">
+            <h4>${escapeHTML(row.name)}</h4>
+            <div class="meta">${fmtDatum(row.datum, row.zeit)}${row.ort ? ' · ' + escapeHTML(row.ort) : ''}</div>
+            <div class="desc">${escapeHTML(row.beschreibung || '')}</div>
+            <span class="badge ${row.anmeldung_moeglich ? 'bestaetigt' : 'abgemeldet'}">${row.anmeldung_moeglich ? 'Anmeldung offen' : 'Anmeldung geschlossen'}</span>
+          </div>
+          <div class="footer">
+            <button class="small-btn" onclick='openEventModal(${JSON.stringify(row).replace(/'/g,"&#39;")})'>Bearbeiten</button>
+            <button class="small-btn" onclick="openAttendeesModal('${row.id}', ${JSON.stringify(row.name).replace(/'/g,"&#39;")})">Teilnehmerinnen</button>
+            <button class="small-btn danger" onclick="deleteEvent('${row.id}')">Löschen</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  const eventModalOverlay = document.getElementById('eventModalOverlay');
+  const eventForm = document.getElementById('eventForm');
+  const evImgPreview = document.getElementById('ev-img-preview');
+  const evImgUploadText = document.getElementById('ev-img-upload-text');
+
+  document.getElementById('ev-bild').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingEventFile = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      evImgPreview.src = reader.result;
+      evImgPreview.style.display = 'block';
+      evImgUploadText.textContent = file.name + ' — klicken zum Ändern';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function openEventModal(row){
+    pendingEventFile = null;
+    document.getElementById('eventModalTitle').textContent = row ? 'Event bearbeiten' : 'Event erstellen';
+    document.getElementById('ev-id').value = row ? row.id : '';
+    document.getElementById('ev-bild-url').value = row && row.bild_url ? row.bild_url : '';
+    document.getElementById('ev-name').value = row ? row.name : '';
+    document.getElementById('ev-ort').value = row ? (row.ort || '') : '';
+    document.getElementById('ev-beschreibung').value = row ? (row.beschreibung || '') : '';
+    document.getElementById('ev-datum').value = row ? row.datum : '';
+    document.getElementById('ev-zeit').value = row && row.zeit ? row.zeit.slice(0,5) : '';
+    document.getElementById('ev-anmeldung').checked = row ? !!row.anmeldung_moeglich : true;
+    if (row && row.bild_url){
+      evImgPreview.src = row.bild_url;
+      evImgPreview.style.display = 'block';
+      evImgUploadText.textContent = 'Bild ändern…';
+    } else {
+      evImgPreview.style.display = 'none';
+      evImgUploadText.textContent = 'Bild auswählen…';
+    }
+    eventModalOverlay.classList.add('open');
+  }
+  function closeEventModal(){
+    eventModalOverlay.classList.remove('open');
+    eventForm.reset();
+    pendingEventFile = null;
+    evImgPreview.style.display = 'none';
+  }
+  eventModalOverlay.addEventListener('click', (e) => { if (e.target === eventModalOverlay) closeEventModal(); });
+
+  eventForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('ev-id').value;
+    const saveBtn = document.getElementById('eventSaveBtn');
+    saveBtn.disabled = true;
+
+    if (demoMode){
+      const payload = {
+        name: document.getElementById('ev-name').value.trim(),
+        ort: document.getElementById('ev-ort').value.trim() || null,
+        beschreibung: document.getElementById('ev-beschreibung').value.trim() || null,
+        datum: document.getElementById('ev-datum').value,
+        zeit: document.getElementById('ev-zeit').value || null,
+        anmeldung_moeglich: document.getElementById('ev-anmeldung').checked,
+        bild_url: pendingEventFile ? evImgPreview.src : (document.getElementById('ev-bild-url').value || null)
+      };
+      if (id){
+        const idx = DEMO_EVENTS.findIndex(ev => ev.id === id);
+        if (idx > -1) DEMO_EVENTS[idx] = { ...DEMO_EVENTS[idx], ...payload };
+      } else {
+        DEMO_EVENTS.unshift({ id:'de-'+Date.now(), ...payload });
+      }
+      renderEvents(DEMO_EVENTS);
+      saveBtn.disabled = false;
+      closeEventModal();
+      return;
+    }
+
+    let bildUrl = document.getElementById('ev-bild-url').value || null;
+    if (pendingEventFile){
+      const filePath = `${Date.now()}-${pendingEventFile.name}`;
+      const { error: uploadError } = await sb.storage.from('event-images').upload(filePath, pendingEventFile, { upsert: true });
+      if (uploadError){
+        alert('Fehler beim Bild-Upload: ' + uploadError.message);
+        saveBtn.disabled = false;
+        return;
+      }
+      const { data: urlData } = sb.storage.from('event-images').getPublicUrl(filePath);
+      bildUrl = urlData.publicUrl;
+    }
+
+    const payload = {
+      name: document.getElementById('ev-name').value.trim(),
+      ort: document.getElementById('ev-ort').value.trim() || null,
+      beschreibung: document.getElementById('ev-beschreibung').value.trim() || null,
+      datum: document.getElementById('ev-datum').value,
+      zeit: document.getElementById('ev-zeit').value || null,
+      anmeldung_moeglich: document.getElementById('ev-anmeldung').checked,
+      bild_url: bildUrl
+    };
+
+    let error;
+    if (id){
+      ({ error } = await sb.from('events').update(payload).eq('id', id));
+    } else {
+      ({ error } = await sb.from('events').insert(payload));
+    }
+    saveBtn.disabled = false;
+    if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
+    closeEventModal();
+    loadEvents();
+  });
+
+  async function deleteEvent(id){
+    if (!confirm('Dieses Event wirklich löschen? Anmeldungen dazu werden ebenfalls gelöscht.')) return;
+    if (demoMode){
+      const idx = DEMO_EVENTS.findIndex(ev => ev.id === id);
+      if (idx > -1) DEMO_EVENTS.splice(idx, 1);
+      renderEvents(DEMO_EVENTS);
+      return;
+    }
+    const { error } = await sb.from('events').delete().eq('id', id);
+    if (error){ alert('Fehler beim Löschen: ' + error.message); return; }
+    loadEvents();
+  }
+
+  /* ---------- Teilnehmerinnen ---------- */
+  const attendeesModalOverlay = document.getElementById('attendeesModalOverlay');
+  let currentAttendeesEventId = null;
+
+  async function openAttendeesModal(eventId, eventName){
+    currentAttendeesEventId = eventId;
+    document.getElementById('attendeesModalTitle').textContent = 'Teilnehmerinnen — ' + eventName;
+    const el = document.getElementById('attendeesContent');
+    el.className = 'loading'; el.textContent = 'Lädt…';
+    attendeesModalOverlay.classList.add('open');
+
+    if (demoMode){
+      renderAttendees(DEMO_REGISTRATIONS[eventId] || []);
+      return;
+    }
+    const { data, error } = await sb.from('event_registrations').select('*').eq('event_id', eventId).order('created_at', { ascending: false });
+    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+    renderAttendees(data);
+  }
+  function closeAttendeesModal(){
+    attendeesModalOverlay.classList.remove('open');
+  }
+  attendeesModalOverlay.addEventListener('click', (e) => { if (e.target === attendeesModalOverlay) closeAttendeesModal(); });
+
+  function renderAttendees(data){
+    const el = document.getElementById('attendeesContent');
+    if (data.length === 0){
+      el.className = 'empty-state';
+      el.textContent = 'Noch keine Anmeldungen für dieses Event.';
+      return;
+    }
+    el.className = '';
+    el.innerHTML = `
+      <table>
+        <thead><tr><th>Vorname</th><th>Nachname</th><th>E-Mail</th><th>Angemeldet am</th></tr></thead>
+        <tbody>
+          ${data.map(row => `
+            <tr>
+              <td>${escapeHTML(row.vorname || '—')}</td>
+              <td>${escapeHTML(row.nachname || '—')}</td>
+              <td>${escapeHTML(row.email)}</td>
+              <td>${fmtDate(row.created_at)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
   }
 
   checkSession();
