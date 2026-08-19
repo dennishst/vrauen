@@ -38,9 +38,7 @@
   a{color:inherit;}
 
   /* ---------- Login-Screen ---------- */
-  #loginScreen{
-    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
-  }
+  #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
   .login-box{
     background:var(--white);border-radius:22px;padding:40px 36px;max-width:380px;width:100%;
     box-shadow:0 20px 44px -26px rgba(20,63,100,0.45);
@@ -49,11 +47,14 @@
   .login-box p.sub{font-size:14px;opacity:0.7;margin-bottom:24px;}
   .field{margin-bottom:16px;}
   .field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;}
-  .field input{
+  .field input,.field textarea,.field select{
     width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #E3E3E3;
-    font-family:var(--body);font-size:14.5px;
+    font-family:var(--body);font-size:14.5px;background:var(--white);color:var(--navy);
   }
-  .field input:focus{outline:none;border-color:var(--navy);}
+  .field textarea{resize:vertical;min-height:140px;}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--navy);}
+  .field-check{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:14px;}
+  .field-check input{width:auto;}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
     font-family:var(--body);font-weight:800;font-size:14.5px;padding:14px;border-radius:999px;
@@ -61,6 +62,7 @@
   }
   .btn:hover{opacity:0.9;}
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .btn-w-auto{width:auto;padding:12px 24px;}
   .login-error{color:var(--red);font-size:13px;margin-top:14px;display:none;}
 
   /* ---------- Dashboard ---------- */
@@ -78,11 +80,11 @@
   }
   .btn-outline:hover{background:rgba(255,255,255,0.12);}
 
-  main{max-width:1100px;margin:0 auto;padding:32px 24px 80px;}
-  .tabs{display:flex;gap:8px;margin-bottom:24px;background:var(--white);padding:6px;border-radius:999px;width:fit-content;}
+  main{max-width:1200px;margin:0 auto;padding:32px 24px 80px;}
+  .tabs{display:flex;gap:8px;margin-bottom:24px;background:var(--white);padding:6px;border-radius:999px;width:fit-content;flex-wrap:wrap;}
   .tab-btn{
-    padding:10px 22px;border-radius:999px;border:none;background:transparent;color:var(--navy);
-    font-family:var(--body);font-weight:700;font-size:14px;cursor:pointer;
+    padding:10px 20px;border-radius:999px;border:none;background:transparent;color:var(--navy);
+    font-family:var(--body);font-weight:700;font-size:13.5px;cursor:pointer;white-space:nowrap;
   }
   .tab-btn.active{background:var(--navy);color:var(--white);}
 
@@ -92,37 +94,76 @@
   .card{background:var(--white);border-radius:18px;padding:6px;overflow-x:auto;box-shadow:0 12px 30px -22px rgba(20,63,100,0.35);}
   table{width:100%;border-collapse:collapse;min-width:600px;}
   th{
-    text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.03em;
-    color:var(--navy);opacity:0.6;padding:14px 16px;border-bottom:2px solid var(--pink-card);
+    text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:0.03em;
+    color:var(--navy);opacity:0.6;padding:14px 16px;border-bottom:2px solid var(--pink-card);white-space:nowrap;
   }
   td{padding:14px 16px;font-size:14px;border-bottom:1px solid #F2F2F2;vertical-align:top;}
   tr:last-child td{border-bottom:none;}
-  .badge{
-    display:inline-block;padding:4px 12px;border-radius:999px;font-size:11.5px;font-weight:800;
-  }
+  .badge{display:inline-block;padding:4px 12px;border-radius:999px;font-size:11.5px;font-weight:800;white-space:nowrap;}
   .badge.bestaetigt{background:#E3F4EA;color:var(--green);}
   .badge.unbestaetigt{background:#FDF3E3;color:#B3821E;}
   .badge.abgemeldet{background:#F2F2F2;color:#888;}
+  .badge.nicht_angemeldet{background:#F2F2F2;color:#888;}
   .badge.unread{background:var(--pink-card);color:var(--navy);}
   .badge.read{background:#F2F2F2;color:#888;}
-  .mark-btn{
+  .badge.entwurf{background:#FDF3E3;color:#B3821E;}
+  .mark-btn,.small-btn{
     border:1.5px solid var(--navy);background:transparent;color:var(--navy);
     padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--body);
+    white-space:nowrap;
   }
-  .mark-btn:hover{background:var(--navy);color:var(--white);}
+  .mark-btn:hover,.small-btn:hover{background:var(--navy);color:var(--white);}
+  .small-btn.danger{border-color:var(--red);color:var(--red);}
+  .small-btn.danger:hover{background:var(--red);color:var(--white);}
+  .row-actions{display:flex;gap:8px;}
   .empty-state{padding:60px 20px;text-align:center;opacity:0.6;font-size:14px;}
   .loading{padding:40px;text-align:center;opacity:0.6;font-size:14px;}
   .count-pill{
     display:inline-block;background:var(--pink);color:var(--navy);font-size:12px;font-weight:800;
     padding:2px 10px;border-radius:999px;margin-left:8px;
   }
-  .msg-cell{max-width:320px;white-space:pre-wrap;}
+  .msg-cell{max-width:280px;white-space:pre-wrap;}
   .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;}
+  .toolbar-actions{display:flex;gap:10px;flex-wrap:wrap;}
   .refresh-btn{
     background:var(--white);border:1.5px solid var(--navy);color:var(--navy);
     padding:9px 18px;border-radius:999px;font-family:var(--body);font-weight:700;font-size:13px;cursor:pointer;width:auto;
   }
   .refresh-btn:hover{background:var(--navy);color:var(--white);}
+  .add-btn{
+    background:var(--navy);border:none;color:var(--white);
+    padding:9px 20px;border-radius:999px;font-family:var(--body);font-weight:700;font-size:13px;cursor:pointer;width:auto;
+  }
+  .add-btn:hover{opacity:0.9;}
+  .stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;}
+  .stat-card{background:var(--white);border-radius:16px;padding:18px 20px;box-shadow:0 12px 30px -22px rgba(20,63,100,0.35);}
+  .stat-card .num{font-family:var(--display);font-size:26px;font-weight:800;}
+  .stat-card .lbl{font-size:12.5px;opacity:0.65;margin-top:2px;}
+  .note-box{
+    background:var(--pink-card);border-radius:14px;padding:14px 18px;font-size:13px;margin-bottom:20px;
+    color:var(--navy);
+  }
+  .placeholder-col{opacity:0.4;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(20,63,100,0.45);z-index:200;
+    align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--white);border-radius:22px;padding:32px;max-width:460px;width:100%;
+    max-height:88vh;overflow-y:auto;position:relative;
+  }
+  .modal-box h3{font-size:19px;margin-bottom:18px;}
+  .modal-close{
+    position:absolute;top:16px;right:16px;background:none;border:none;font-size:22px;
+    cursor:pointer;color:var(--navy);opacity:0.5;line-height:1;
+  }
+  .modal-close:hover{opacity:1;}
+  .modal-actions{display:flex;gap:10px;margin-top:6px;}
+  .modal-actions .btn{flex:1;}
+  .btn-secondary{background:transparent;border:1.5px solid var(--navy);color:var(--navy);}
 </style>
 </head>
 <body>
@@ -162,20 +203,66 @@
 
   <main>
     <div class="tabs">
-      <button class="tab-btn active" data-tab="subscribers">Newsletter <span class="count-pill" id="countSubs">0</span></button>
+      <button class="tab-btn active" data-tab="members">Mitglieder <span class="count-pill" id="countMembers">0</span></button>
+      <button class="tab-btn" data-tab="subscribers">Newsletteranmeldungen <span class="count-pill" id="countSubs">0</span></button>
+      <button class="tab-btn" data-tab="newsletter">Newsletter erstellen</button>
       <button class="tab-btn" data-tab="submissions">Einreichungen <span class="count-pill" id="countSubm">0</span></button>
     </div>
 
-    <div class="panel active" id="panel-subscribers">
+    <!-- ---------- MITGLIEDER ---------- -->
+    <div class="panel active" id="panel-members">
       <div class="toolbar">
-        <div></div>
-        <button class="refresh-btn" onclick="loadSubscribers()">Aktualisieren</button>
+        <div class="toolbar-actions">
+          <button class="refresh-btn" onclick="loadMembers()">Aktualisieren</button>
+        </div>
+        <button class="add-btn" onclick="openMemberModal()">+ Mitglied hinzufügen</button>
+      </div>
+      <div class="card">
+        <div id="membersContent" class="loading">Lädt…</div>
+      </div>
+    </div>
+
+    <!-- ---------- NEWSLETTERANMELDUNGEN ---------- -->
+    <div class="panel" id="panel-subscribers">
+      <div class="note-box">
+        „Erhaltene Newsletter" und „Öffnungsrate" werden sichtbar, sobald der automatische Versand eingerichtet ist. Bis dahin kannst du alle bestätigten Adressen als CSV exportieren.
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-actions">
+          <button class="refresh-btn" onclick="loadSubscribers()">Aktualisieren</button>
+        </div>
+        <button class="add-btn" onclick="exportConfirmedCSV()">Bestätigte E-Mails als CSV exportieren</button>
       </div>
       <div class="card">
         <div id="subscribersContent" class="loading">Lädt…</div>
       </div>
     </div>
 
+    <!-- ---------- NEWSLETTER ERSTELLEN ---------- -->
+    <div class="panel" id="panel-newsletter">
+      <div class="note-box">
+        Der automatische Versand ist noch nicht aktiv. Entwürfe werden gespeichert und können später verschickt werden, sobald ein E-Mail-Versanddienst angebunden ist. Bis dahin: Entwurf speichern, dann über „Bestätigte E-Mails als CSV exportieren" die Empfängerliste ziehen und manuell versenden.
+      </div>
+      <div class="card" style="padding:24px;">
+        <form id="newsletterForm">
+          <div class="field">
+            <label for="nl-subject">Betreff</label>
+            <input type="text" id="nl-subject" required placeholder="z.B. VRauen Newsletter — August 2026">
+          </div>
+          <div class="field">
+            <label for="nl-body">Inhalt</label>
+            <textarea id="nl-body" required placeholder="Text des Newsletters…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-w-auto" id="nlSaveBtn">Als Entwurf speichern</button>
+        </form>
+      </div>
+      <h3 style="margin:28px 0 14px;font-size:17px;">Gespeicherte Entwürfe</h3>
+      <div class="card">
+        <div id="newslettersContent" class="loading">Lädt…</div>
+      </div>
+    </div>
+
+    <!-- ---------- EINREICHUNGEN ---------- -->
     <div class="panel" id="panel-submissions">
       <div class="toolbar">
         <div></div>
@@ -188,6 +275,36 @@
   </main>
 </div>
 
+<!-- ===== MITGLIED MODAL ===== -->
+<div class="modal-overlay" id="memberModalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeMemberModal()" aria-label="Schließen">&times;</button>
+    <h3 id="memberModalTitle">Mitglied hinzufügen</h3>
+    <form id="memberForm">
+      <input type="hidden" id="mb-id">
+      <div class="field"><label for="mb-vorname">Vorname</label><input type="text" id="mb-vorname"></div>
+      <div class="field"><label for="mb-nachname">Nachname</label><input type="text" id="mb-nachname"></div>
+      <div class="field"><label for="mb-unternehmen">Unternehmen</label><input type="text" id="mb-unternehmen"></div>
+      <div class="field"><label for="mb-email">E-Mail *</label><input type="email" id="mb-email" required></div>
+      <div class="field"><label for="mb-telefon">Telefon</label><input type="text" id="mb-telefon"></div>
+      <label class="field-check"><input type="checkbox" id="mb-newsletter"><span>Newsletter-Anmeldung</span></label>
+      <div class="field">
+        <label for="mb-optin">Double-Opt-in Status</label>
+        <select id="mb-optin">
+          <option value="nicht_angemeldet">Nicht angemeldet</option>
+          <option value="unbestaetigt">Unbestätigt</option>
+          <option value="bestaetigt">Bestätigt</option>
+          <option value="abgemeldet">Abgemeldet</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeMemberModal()">Abbrechen</button>
+        <button type="submit" class="btn" id="memberSaveBtn">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
   const loginScreen = document.getElementById('loginScreen');
   const dashboard = document.getElementById('dashboard');
@@ -195,15 +312,17 @@
   const loginBtn = document.getElementById('loginBtn');
   const loginError = document.getElementById('loginError');
   const whoLabel = document.getElementById('whoLabel');
+  let demoMode = false;
 
   function fmtDate(iso){
+    if(!iso) return '—';
     const d = new Date(iso);
     return d.toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' +
            d.toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'});
   }
   function escapeHTML(str){
     if(!str) return '';
-    return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 
   /* ---------- Auth ---------- */
@@ -217,16 +336,23 @@
     }
   }
 
-  let demoMode = false;
-
   function showDashboard(email){
     loginScreen.style.display = 'none';
     dashboard.style.display = 'block';
     whoLabel.textContent = email;
+    loadMembers();
     loadSubscribers();
     loadSubmissions();
+    loadNewsletters();
   }
 
+  /* ---------- Demo-Daten ---------- */
+  const DEMO_MEMBERS = [
+    { id:'dm-1', vorname:'Anne', nachname:'Liedtke', unternehmen:'MakerPort Stralsund', email:'anne@makerport.de', telefon:'03831 123456', newsletter_optin:true, optin_status:'bestaetigt' },
+    { id:'dm-2', vorname:'Merle-Marie', nachname:'Drüding', unternehmen:'Project Bay', email:'merle@example.de', telefon:'', newsletter_optin:true, optin_status:'bestaetigt' },
+    { id:'dm-3', vorname:'Karen', nachname:'Hoppenrath', unternehmen:'Landkreis Vorpommern-Rügen', email:'karen.h@vp-ruegen.de', telefon:'03831 654321', newsletter_optin:true, optin_status:'unbestaetigt' },
+    { id:'dm-4', vorname:'Eva-Maria', nachname:'Mertens', unternehmen:'Hochschule Stralsund', email:'eva.mertens@hochschule-stralsund.de', telefon:'', newsletter_optin:false, optin_status:'nicht_angemeldet' }
+  ];
   const DEMO_SUBSCRIBERS = [
     { email: 'merle@example.de', source: 'newsletter-box', status: 'bestaetigt', created_at: '2026-08-17T09:12:00Z' },
     { email: 'karen.h@vp-ruegen.de', source: 'kontakt-form', status: 'unbestaetigt', created_at: '2026-08-18T14:47:00Z' },
@@ -238,6 +364,9 @@
     { id: 'demo-2', type: 'thema', name: 'Eva-Maria Mertens', email: 'eva.mertens@hochschule-stralsund.de', message: 'Ich würde gern über Frauen in MINT-Berufen sprechen.', created_at: '2026-08-19T08:03:00Z', read: false },
     { id: 'demo-3', type: 'vorschlag', name: '—', email: '—', message: 'Female Founders MV', created_at: '2026-08-10T16:00:00Z', read: true }
   ];
+  const DEMO_NEWSLETTERS = [
+    { id:'dn-1', subject:'VRauen Newsletter — August 2026', body:'Liebe VRauen…', status:'entwurf', created_at:'2026-08-15T10:00:00Z' }
+  ];
 
   document.getElementById('demoLink').addEventListener('click', (e) => {
     e.preventDefault();
@@ -245,8 +374,10 @@
     loginScreen.style.display = 'none';
     dashboard.style.display = 'block';
     whoLabel.textContent = 'Demo-Modus (Beispieldaten)';
+    renderMembers(DEMO_MEMBERS);
     renderSubscribers(DEMO_SUBSCRIBERS);
     renderSubmissions(DEMO_SUBMISSIONS);
+    renderNewsletters(DEMO_NEWSLETTERS);
   });
 
   loginForm.addEventListener('submit', async (e) => {
@@ -265,10 +396,7 @@
   });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
-    if (demoMode){
-      location.reload();
-      return;
-    }
+    if (demoMode){ location.reload(); return; }
     await sb.auth.signOut();
     location.reload();
   });
@@ -283,20 +411,143 @@
     });
   });
 
-  /* ---------- Subscribers laden ---------- */
-  async function loadSubscribers(){
-    const el = document.getElementById('subscribersContent');
-    el.className = 'loading';
-    el.textContent = 'Lädt…';
-    const { data, error } = await sb.from('subscribers').select('*').order('created_at', { ascending: false });
-    if (error){
-      el.textContent = 'Fehler beim Laden: ' + error.message;
+  /* ============================================================
+     MITGLIEDER
+     ============================================================ */
+  async function loadMembers(){
+    const el = document.getElementById('membersContent');
+    el.className = 'loading'; el.textContent = 'Lädt…';
+    const { data, error } = await sb.from('members').select('*').order('created_at', { ascending: false });
+    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+    renderMembers(data);
+  }
+
+  function renderMembers(data){
+    const el = document.getElementById('membersContent');
+    document.getElementById('countMembers').textContent = data.length;
+    if (data.length === 0){
+      el.className = 'empty-state';
+      el.textContent = 'Noch keine Mitglieder erfasst.';
       return;
     }
+    el.className = '';
+    el.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Vorname</th><th>Nachname</th><th>Unternehmen</th><th>E-Mail</th><th>Telefon</th>
+          <th>Newsletter</th><th>Double-Opt-in</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${data.map(row => `
+            <tr>
+              <td>${escapeHTML(row.vorname || '—')}</td>
+              <td>${escapeHTML(row.nachname || '—')}</td>
+              <td>${escapeHTML(row.unternehmen || '—')}</td>
+              <td>${escapeHTML(row.email)}</td>
+              <td>${escapeHTML(row.telefon || '—')}</td>
+              <td>${row.newsletter_optin ? 'Ja' : 'Nein'}</td>
+              <td><span class="badge ${row.optin_status}">${row.optin_status.replace('_',' ')}</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="small-btn" onclick='openMemberModal(${JSON.stringify(row).replace(/'/g,"&#39;")})'>Bearbeiten</button>
+                  <button class="small-btn danger" onclick="deleteMember('${row.id}')">Löschen</button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  const memberModalOverlay = document.getElementById('memberModalOverlay');
+  const memberForm = document.getElementById('memberForm');
+
+  function openMemberModal(row){
+    document.getElementById('memberModalTitle').textContent = row ? 'Mitglied bearbeiten' : 'Mitglied hinzufügen';
+    document.getElementById('mb-id').value = row ? row.id : '';
+    document.getElementById('mb-vorname').value = row ? (row.vorname || '') : '';
+    document.getElementById('mb-nachname').value = row ? (row.nachname || '') : '';
+    document.getElementById('mb-unternehmen').value = row ? (row.unternehmen || '') : '';
+    document.getElementById('mb-email').value = row ? row.email : '';
+    document.getElementById('mb-telefon').value = row ? (row.telefon || '') : '';
+    document.getElementById('mb-newsletter').checked = row ? !!row.newsletter_optin : false;
+    document.getElementById('mb-optin').value = row ? row.optin_status : 'nicht_angemeldet';
+    memberModalOverlay.classList.add('open');
+  }
+  function closeMemberModal(){
+    memberModalOverlay.classList.remove('open');
+    memberForm.reset();
+  }
+  memberModalOverlay.addEventListener('click', (e) => { if (e.target === memberModalOverlay) closeMemberModal(); });
+
+  memberForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('mb-id').value;
+    const payload = {
+      vorname: document.getElementById('mb-vorname').value.trim() || null,
+      nachname: document.getElementById('mb-nachname').value.trim() || null,
+      unternehmen: document.getElementById('mb-unternehmen').value.trim() || null,
+      email: document.getElementById('mb-email').value.trim(),
+      telefon: document.getElementById('mb-telefon').value.trim() || null,
+      newsletter_optin: document.getElementById('mb-newsletter').checked,
+      optin_status: document.getElementById('mb-optin').value
+    };
+    const saveBtn = document.getElementById('memberSaveBtn');
+    saveBtn.disabled = true;
+
+    if (demoMode){
+      if (id){
+        const idx = DEMO_MEMBERS.findIndex(m => m.id === id);
+        if (idx > -1) DEMO_MEMBERS[idx] = { ...DEMO_MEMBERS[idx], ...payload };
+      } else {
+        DEMO_MEMBERS.unshift({ id:'dm-'+Date.now(), ...payload });
+      }
+      renderMembers(DEMO_MEMBERS);
+      saveBtn.disabled = false;
+      closeMemberModal();
+      return;
+    }
+
+    let error;
+    if (id){
+      ({ error } = await sb.from('members').update(payload).eq('id', id));
+    } else {
+      ({ error } = await sb.from('members').insert(payload));
+    }
+    saveBtn.disabled = false;
+    if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
+    closeMemberModal();
+    loadMembers();
+  });
+
+  async function deleteMember(id){
+    if (!confirm('Dieses Mitglied wirklich löschen?')) return;
+    if (demoMode){
+      const idx = DEMO_MEMBERS.findIndex(m => m.id === id);
+      if (idx > -1) DEMO_MEMBERS.splice(idx, 1);
+      renderMembers(DEMO_MEMBERS);
+      return;
+    }
+    const { error } = await sb.from('members').delete().eq('id', id);
+    if (error){ alert('Fehler beim Löschen: ' + error.message); return; }
+    loadMembers();
+  }
+
+  /* ============================================================
+     NEWSLETTERANMELDUNGEN (subscribers)
+     ============================================================ */
+  async function loadSubscribers(){
+    const el = document.getElementById('subscribersContent');
+    el.className = 'loading'; el.textContent = 'Lädt…';
+    const { data, error } = await sb.from('subscribers').select('*').order('created_at', { ascending: false });
+    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
     renderSubscribers(data);
   }
 
+  let currentSubscribers = [];
+
   function renderSubscribers(data){
+    currentSubscribers = data;
     const el = document.getElementById('subscribersContent');
     document.getElementById('countSubs').textContent = data.length;
     if (data.length === 0){
@@ -307,12 +558,88 @@
     el.className = '';
     el.innerHTML = `
       <table>
-        <thead><tr><th>E-Mail</th><th>Quelle</th><th>Status</th><th>Angemeldet am</th></tr></thead>
+        <thead><tr>
+          <th>E-Mail</th><th>Opt-in</th><th class="placeholder-col">Erhaltene Newsletter</th>
+          <th class="placeholder-col">Öffnungsrate</th><th>Angemeldet am</th>
+        </tr></thead>
         <tbody>
           ${data.map(row => `
             <tr>
               <td>${escapeHTML(row.email)}</td>
-              <td>${escapeHTML(row.source || '—')}</td>
+              <td><span class="badge ${row.status}">${row.status}</span></td>
+              <td class="placeholder-col">–</td>
+              <td class="placeholder-col">–</td>
+              <td>${fmtDate(row.created_at)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function exportConfirmedCSV(){
+    const confirmed = currentSubscribers.filter(s => s.status === 'bestaetigt');
+    if (confirmed.length === 0){ alert('Keine bestätigten Adressen vorhanden.'); return; }
+    const rows = [['email','angemeldet_am'], ...confirmed.map(s => [s.email, s.created_at])];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'vrauen-newsletter-optin-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /* ============================================================
+     NEWSLETTER ERSTELLEN
+     ============================================================ */
+  document.getElementById('newsletterForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const subject = document.getElementById('nl-subject').value.trim();
+    const body = document.getElementById('nl-body').value.trim();
+    const btn = document.getElementById('nlSaveBtn');
+    btn.disabled = true;
+
+    if (demoMode){
+      DEMO_NEWSLETTERS.unshift({ id:'dn-'+Date.now(), subject, body, status:'entwurf', created_at: new Date().toISOString() });
+      renderNewsletters(DEMO_NEWSLETTERS);
+      e.target.reset();
+      btn.disabled = false;
+      return;
+    }
+
+    const { error } = await sb.from('newsletters').insert({ subject, body, status: 'entwurf' });
+    btn.disabled = false;
+    if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
+    e.target.reset();
+    loadNewsletters();
+  });
+
+  async function loadNewsletters(){
+    const el = document.getElementById('newslettersContent');
+    el.className = 'loading'; el.textContent = 'Lädt…';
+    const { data, error } = await sb.from('newsletters').select('*').order('created_at', { ascending: false });
+    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+    renderNewsletters(data);
+  }
+
+  function renderNewsletters(data){
+    const el = document.getElementById('newslettersContent');
+    if (data.length === 0){
+      el.className = 'empty-state';
+      el.textContent = 'Noch keine Entwürfe gespeichert.';
+      return;
+    }
+    el.className = '';
+    el.innerHTML = `
+      <table>
+        <thead><tr><th>Betreff</th><th>Status</th><th>Erstellt am</th></tr></thead>
+        <tbody>
+          ${data.map(row => `
+            <tr>
+              <td>${escapeHTML(row.subject)}</td>
               <td><span class="badge ${row.status}">${row.status}</span></td>
               <td>${fmtDate(row.created_at)}</td>
             </tr>
@@ -321,16 +648,14 @@
       </table>`;
   }
 
-  /* ---------- Submissions laden ---------- */
+  /* ============================================================
+     EINREICHUNGEN
+     ============================================================ */
   async function loadSubmissions(){
     const el = document.getElementById('submissionsContent');
-    el.className = 'loading';
-    el.textContent = 'Lädt…';
+    el.className = 'loading'; el.textContent = 'Lädt…';
     const { data, error } = await sb.from('form_submissions').select('*').order('created_at', { ascending: false });
-    if (error){
-      el.textContent = 'Fehler beim Laden: ' + error.message;
-      return;
-    }
+    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
     renderSubmissions(data);
   }
 
