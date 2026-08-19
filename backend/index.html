@@ -144,6 +144,9 @@
       <button type="submit" class="btn" id="loginBtn">Anmelden</button>
       <p class="login-error" id="loginError">E-Mail oder Passwort falsch.</p>
     </form>
+    <p style="text-align:center;margin-top:18px;font-size:12.5px;">
+      <a href="#" id="demoLink" style="text-decoration:underline;opacity:0.7;">Demo ansehen (mit Beispieldaten, ohne Login)</a>
+    </p>
   </div>
 </div>
 
@@ -214,6 +217,8 @@
     }
   }
 
+  let demoMode = false;
+
   function showDashboard(email){
     loginScreen.style.display = 'none';
     dashboard.style.display = 'block';
@@ -221,6 +226,28 @@
     loadSubscribers();
     loadSubmissions();
   }
+
+  const DEMO_SUBSCRIBERS = [
+    { email: 'merle@example.de', source: 'newsletter-box', status: 'bestaetigt', created_at: '2026-08-17T09:12:00Z' },
+    { email: 'karen.h@vp-ruegen.de', source: 'kontakt-form', status: 'unbestaetigt', created_at: '2026-08-18T14:47:00Z' },
+    { email: 'eva.mertens@hochschule-stralsund.de', source: 'thema-form', status: 'bestaetigt', created_at: '2026-08-19T08:03:00Z' },
+    { email: 'lena.k@beispiel.de', source: 'newsletter-box', status: 'abgemeldet', created_at: '2026-07-30T11:20:00Z' }
+  ];
+  const DEMO_SUBMISSIONS = [
+    { id: 'demo-1', type: 'kontakt', name: 'Karen Hoppenrath', email: 'karen.h@vp-ruegen.de', message: 'Könnt ihr mir Infos zum nächsten Treffen schicken?', created_at: '2026-08-18T14:47:00Z', read: false },
+    { id: 'demo-2', type: 'thema', name: 'Eva-Maria Mertens', email: 'eva.mertens@hochschule-stralsund.de', message: 'Ich würde gern über Frauen in MINT-Berufen sprechen.', created_at: '2026-08-19T08:03:00Z', read: false },
+    { id: 'demo-3', type: 'vorschlag', name: '—', email: '—', message: 'Female Founders MV', created_at: '2026-08-10T16:00:00Z', read: true }
+  ];
+
+  document.getElementById('demoLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    demoMode = true;
+    loginScreen.style.display = 'none';
+    dashboard.style.display = 'block';
+    whoLabel.textContent = 'Demo-Modus (Beispieldaten)';
+    renderSubscribers(DEMO_SUBSCRIBERS);
+    renderSubmissions(DEMO_SUBMISSIONS);
+  });
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -238,6 +265,10 @@
   });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
+    if (demoMode){
+      location.reload();
+      return;
+    }
     await sb.auth.signOut();
     location.reload();
   });
@@ -262,6 +293,11 @@
       el.textContent = 'Fehler beim Laden: ' + error.message;
       return;
     }
+    renderSubscribers(data);
+  }
+
+  function renderSubscribers(data){
+    const el = document.getElementById('subscribersContent');
     document.getElementById('countSubs').textContent = data.length;
     if (data.length === 0){
       el.className = 'empty-state';
@@ -295,6 +331,11 @@
       el.textContent = 'Fehler beim Laden: ' + error.message;
       return;
     }
+    renderSubmissions(data);
+  }
+
+  function renderSubmissions(data){
+    const el = document.getElementById('submissionsContent');
     document.getElementById('countSubm').textContent = data.length;
     if (data.length === 0){
       el.className = 'empty-state';
@@ -322,6 +363,12 @@
   }
 
   async function markRead(id){
+    if (demoMode){
+      const item = DEMO_SUBMISSIONS.find(s => s.id === id);
+      if (item) item.read = true;
+      renderSubmissions(DEMO_SUBMISSIONS);
+      return;
+    }
     const { error } = await sb.from('form_submissions').update({ read: true }).eq('id', id);
     if (!error) loadSubmissions();
   }
