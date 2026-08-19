@@ -185,6 +185,9 @@
   }
   .img-upload:hover{opacity:1;border-color:var(--navy);}
   .img-preview{width:120px;height:120px;border-radius:12px;object-fit:cover;margin:0 auto 10px;display:block;}
+  .content-preview-img{width:60px;height:60px;border-radius:8px;object-fit:cover;}
+  .content-key{font-family:monospace;font-size:12px;background:var(--pink-card);padding:2px 8px;border-radius:6px;}
+  .content-val{max-width:320px;font-size:13px;opacity:0.8;}
 </style>
 </head>
 <body>
@@ -229,6 +232,7 @@
       <button class="tab-btn" data-tab="newsletter">Newsletter erstellen</button>
       <button class="tab-btn" data-tab="submissions">Einreichungen <span class="count-pill" id="countSubm">0</span></button>
       <button class="tab-btn" data-tab="events">Events <span class="count-pill" id="countEvents">0</span></button>
+      <button class="tab-btn" data-tab="content">Inhalte <span class="count-pill" id="countContent">0</span></button>
     </div>
 
     <!-- ---------- MITGLIEDER ---------- -->
@@ -305,6 +309,22 @@
       </div>
       <div id="eventsContent" class="loading">Lädt…</div>
     </div>
+
+    <!-- ---------- INHALTE ---------- -->
+    <div class="panel" id="panel-content">
+      <div class="note-box">
+        Hier änderst du nur Texte und Bilder — das Layout der Website bleibt immer gleich. Ein neues Feld wird erst auf der Website sichtbar, wenn im Code an der passenden Stelle das Kennzeichen <span class="content-key">data-cms="dein-key"</span> eingetragen ist.
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-actions">
+          <button class="refresh-btn" onclick="loadContent()">Aktualisieren</button>
+        </div>
+        <button class="add-btn" onclick="openContentModal()">+ Neues Feld</button>
+      </div>
+      <div class="card">
+        <div id="contentContent" class="loading">Lädt…</div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -377,6 +397,45 @@
   </div>
 </div>
 
+<!-- ===== INHALTE MODAL ===== -->
+<div class="modal-overlay" id="contentModalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeContentModal()" aria-label="Schließen">&times;</button>
+    <h3 id="contentModalTitle">Feld bearbeiten</h3>
+    <form id="contentForm">
+      <input type="hidden" id="ct-original-key">
+      <div class="field">
+        <label for="ct-key">Kennzeichen (key) *</label>
+        <input type="text" id="ct-key" required placeholder="z.B. hero_headline">
+      </div>
+      <div class="field"><label for="ct-label">Beschreibung im Dashboard *</label><input type="text" id="ct-label" required placeholder="z.B. Hero – Überschrift"></div>
+      <div class="field">
+        <label for="ct-type">Typ</label>
+        <select id="ct-type">
+          <option value="text">Text</option>
+          <option value="image">Bild</option>
+        </select>
+      </div>
+      <div class="field" id="ct-text-field">
+        <label for="ct-value-text">Text</label>
+        <textarea id="ct-value-text"></textarea>
+      </div>
+      <div class="field" id="ct-image-field" style="display:none;">
+        <label>Bild</label>
+        <img id="ct-img-preview" class="img-preview" style="display:none;">
+        <label class="img-upload">
+          <span id="ct-img-upload-text">Bild auswählen…</span>
+          <input type="file" id="ct-bild" accept="image/*" style="display:none;">
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeContentModal()">Abbrechen</button>
+        <button type="submit" class="btn" id="contentSaveBtn">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
   const loginScreen = document.getElementById('loginScreen');
   const dashboard = document.getElementById('dashboard');
@@ -417,6 +476,7 @@
     loadSubmissions();
     loadNewsletters();
     loadEvents();
+    loadContent();
   }
 
   /* ---------- Demo-Daten ---------- */
@@ -451,6 +511,11 @@
     ],
     'de-2': []
   };
+  const DEMO_CONTENT = [
+    { key:'hero_headline', label:'Hero – Überschrift', type:'text', value:'Kein Ellbogen. Kein Konkurrenzdenken. Nur echte Verbindung.', updated_at:'2026-08-01T10:00:00Z' },
+    { key:'hero_photo', label:'Hero – Bild', type:'image', value:null, updated_at:'2026-08-01T10:00:00Z' },
+    { key:'story_intro', label:'Über uns – Einleitungstext', type:'text', value:'Anfang 2022 fiel uns auf: bei Business-Events in der Region waren Frauen kaum zu sehen.', updated_at:'2026-08-01T10:00:00Z' }
+  ];
 
   document.getElementById('demoLink').addEventListener('click', (e) => {
     e.preventDefault();
@@ -463,6 +528,7 @@
     renderSubmissions(DEMO_SUBMISSIONS);
     renderNewsletters(DEMO_NEWSLETTERS);
     renderEvents(DEMO_EVENTS);
+    renderContent(DEMO_CONTENT);
   });
 
   loginForm.addEventListener('submit', async (e) => {
@@ -1002,6 +1068,172 @@
           `).join('')}
         </tbody>
       </table>`;
+  }
+
+  /* ============================================================
+     INHALTE (Texte & Bilder der Website)
+     ============================================================ */
+  let pendingContentFile = null;
+
+  async function loadContent(){
+    const el = document.getElementById('contentContent');
+    el.className = 'loading'; el.textContent = 'Lädt…';
+    const { data, error } = await sb.from('site_content').select('*').order('label', { ascending: true });
+    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+    renderContent(data);
+  }
+
+  function renderContent(data){
+    const el = document.getElementById('contentContent');
+    document.getElementById('countContent').textContent = data.length;
+    if (data.length === 0){
+      el.className = 'empty-state';
+      el.textContent = 'Noch keine Felder angelegt.';
+      return;
+    }
+    el.className = '';
+    el.innerHTML = `
+      <table>
+        <thead><tr><th>Beschreibung</th><th>Kennzeichen</th><th>Typ</th><th>Aktueller Wert</th><th>Zuletzt geändert</th><th></th></tr></thead>
+        <tbody>
+          ${data.map(row => `
+            <tr>
+              <td>${escapeHTML(row.label)}</td>
+              <td><span class="content-key">${escapeHTML(row.key)}</span></td>
+              <td>${row.type === 'image' ? 'Bild' : 'Text'}</td>
+              <td class="content-val">${
+                row.type === 'image'
+                  ? (row.value ? `<img src="${escapeHTML(row.value)}" class="content-preview-img">` : '—')
+                  : escapeHTML((row.value || '—').slice(0,80))
+              }</td>
+              <td>${fmtDate(row.updated_at)}</td>
+              <td>
+                <div class="row-actions">
+                  <button class="small-btn" onclick='openContentModal(${JSON.stringify(row).replace(/'/g,"&#39;")})'>Bearbeiten</button>
+                  <button class="small-btn danger" onclick="deleteContent('${row.key}')">Löschen</button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  const contentModalOverlay = document.getElementById('contentModalOverlay');
+  const contentForm = document.getElementById('contentForm');
+  const ctImgPreview = document.getElementById('ct-img-preview');
+  const ctImgUploadText = document.getElementById('ct-img-upload-text');
+
+  document.getElementById('ct-type').addEventListener('change', (e) => {
+    const isImage = e.target.value === 'image';
+    document.getElementById('ct-text-field').style.display = isImage ? 'none' : 'block';
+    document.getElementById('ct-image-field').style.display = isImage ? 'block' : 'none';
+  });
+
+  document.getElementById('ct-bild').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingContentFile = file;
+    const reader = new FileReader();
+    reader.onload = () => {
+      ctImgPreview.src = reader.result;
+      ctImgPreview.style.display = 'block';
+      ctImgUploadText.textContent = file.name + ' — klicken zum Ändern';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function openContentModal(row){
+    pendingContentFile = null;
+    document.getElementById('contentModalTitle').textContent = row ? 'Feld bearbeiten' : 'Neues Feld';
+    document.getElementById('ct-original-key').value = row ? row.key : '';
+    document.getElementById('ct-key').value = row ? row.key : '';
+    document.getElementById('ct-key').disabled = !!row;
+    document.getElementById('ct-label').value = row ? row.label : '';
+    document.getElementById('ct-type').value = row ? row.type : 'text';
+    document.getElementById('ct-type').dispatchEvent(new Event('change'));
+    document.getElementById('ct-value-text').value = row && row.type === 'text' ? (row.value || '') : '';
+    if (row && row.type === 'image' && row.value){
+      ctImgPreview.src = row.value;
+      ctImgPreview.style.display = 'block';
+      ctImgUploadText.textContent = 'Bild ändern…';
+    } else {
+      ctImgPreview.style.display = 'none';
+      ctImgUploadText.textContent = 'Bild auswählen…';
+    }
+    contentModalOverlay.classList.add('open');
+  }
+  function closeContentModal(){
+    contentModalOverlay.classList.remove('open');
+    contentForm.reset();
+    document.getElementById('ct-key').disabled = false;
+    pendingContentFile = null;
+    ctImgPreview.style.display = 'none';
+  }
+  contentModalOverlay.addEventListener('click', (e) => { if (e.target === contentModalOverlay) closeContentModal(); });
+
+  contentForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const originalKey = document.getElementById('ct-original-key').value;
+    const key = document.getElementById('ct-key').value.trim();
+    const label = document.getElementById('ct-label').value.trim();
+    const type = document.getElementById('ct-type').value;
+    const saveBtn = document.getElementById('contentSaveBtn');
+    saveBtn.disabled = true;
+
+    if (demoMode){
+      let value = type === 'text' ? document.getElementById('ct-value-text').value : (pendingContentFile ? ctImgPreview.src : null);
+      const idx = DEMO_CONTENT.findIndex(c => c.key === (originalKey || key));
+      if (idx > -1){
+        DEMO_CONTENT[idx] = { ...DEMO_CONTENT[idx], key, label, type, value, updated_at: new Date().toISOString() };
+      } else {
+        DEMO_CONTENT.push({ key, label, type, value, updated_at: new Date().toISOString() });
+      }
+      renderContent(DEMO_CONTENT);
+      saveBtn.disabled = false;
+      closeContentModal();
+      return;
+    }
+
+    let value;
+    if (type === 'image'){
+      if (pendingContentFile){
+        const filePath = `${Date.now()}-${pendingContentFile.name}`;
+        const { error: uploadError } = await sb.storage.from('site-images').upload(filePath, pendingContentFile, { upsert: true });
+        if (uploadError){
+          alert('Fehler beim Bild-Upload: ' + uploadError.message);
+          saveBtn.disabled = false;
+          return;
+        }
+        const { data: urlData } = sb.storage.from('site-images').getPublicUrl(filePath);
+        value = urlData.publicUrl;
+      } else if (originalKey){
+        const existing = (await sb.from('site_content').select('value').eq('key', originalKey).single()).data;
+        value = existing ? existing.value : null;
+      }
+    } else {
+      value = document.getElementById('ct-value-text').value;
+    }
+
+    const payload = { key, label, type, value, updated_at: new Date().toISOString() };
+    const { error } = await sb.from('site_content').upsert(payload, { onConflict: 'key' });
+    saveBtn.disabled = false;
+    if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
+    closeContentModal();
+    loadContent();
+  });
+
+  async function deleteContent(key){
+    if (!confirm('Dieses Feld wirklich löschen? Es verschwindet dann von der Website (bzw. zeigt keinen Wert mehr).')) return;
+    if (demoMode){
+      const idx = DEMO_CONTENT.findIndex(c => c.key === key);
+      if (idx > -1) DEMO_CONTENT.splice(idx, 1);
+      renderContent(DEMO_CONTENT);
+      return;
+    }
+    const { error } = await sb.from('site_content').delete().eq('key', key);
+    if (error){ alert('Fehler beim Löschen: ' + error.message); return; }
+    loadContent();
   }
 
   checkSession();
