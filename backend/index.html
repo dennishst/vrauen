@@ -190,36 +190,72 @@
   .content-val{max-width:320px;font-size:13px;opacity:0.8;}
 
   /* ---------- Newsletter-Baukasten ---------- */
-  .nl-modal-box{max-width:760px;}
-  .block-add-row{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 22px;}
-  .block-card{
-    background:var(--pink-card);border-radius:14px;padding:16px 18px;margin-bottom:12px;position:relative;
+  .nl-modal-box{max-width:980px;}
+  .nl-subject-field{margin-bottom:22px;}
+  .nl-builder-grid{display:grid;grid-template-columns:1.15fr 0.85fr;gap:30px;align-items:start;}
+  @media (max-width:760px){.nl-builder-grid{grid-template-columns:1fr;}}
+
+  .nl-col-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;opacity:0.5;margin-bottom:12px;}
+
+  .block-add-row{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 24px;}
+  .block-add-btn{
+    display:inline-flex;align-items:center;gap:7px;background:var(--white);
+    border:1.5px dashed #D9D9D9;color:var(--navy);padding:9px 16px 9px 12px;border-radius:999px;
+    font-family:var(--body);font-weight:700;font-size:12.5px;cursor:pointer;transition:all .15s ease;
   }
-  .block-card .block-label{font-size:11.5px;font-weight:800;text-transform:uppercase;opacity:0.6;margin-bottom:8px;letter-spacing:0.03em;}
-  .block-card textarea{min-height:80px;}
-  .block-card-actions{display:flex;gap:6px;position:absolute;top:12px;right:14px;}
+  .block-add-btn:hover{border-color:var(--navy);border-style:solid;background:var(--pink-card);}
+  .block-add-btn .glyph{
+    width:22px;height:22px;border-radius:7px;background:var(--pink-card);display:flex;
+    align-items:center;justify-content:center;font-size:12px;flex-shrink:0;
+  }
+
+  .block-card{
+    background:var(--white);border:1.5px solid #ECECEC;border-radius:16px;padding:16px 18px;
+    margin-bottom:14px;position:relative;transition:border-color .15s ease;
+  }
+  .block-card:hover{border-color:#D9D9D9;}
+  .block-card-head{display:flex;align-items:center;gap:9px;margin-bottom:12px;}
+  .block-card-head .glyph{
+    width:26px;height:26px;border-radius:8px;background:var(--pink-card);display:flex;
+    align-items:center;justify-content:center;font-size:13px;flex-shrink:0;
+  }
+  .block-card-head .block-label{font-size:12px;font-weight:800;text-transform:uppercase;opacity:0.55;letter-spacing:0.03em;margin:0;}
+  .block-card textarea{min-height:76px;}
+  .block-card-actions{display:flex;gap:5px;position:absolute;top:14px;right:14px;}
   .icon-btn{
-    background:var(--white);border:none;width:28px;height:28px;border-radius:8px;cursor:pointer;
-    font-size:13px;color:var(--navy);display:flex;align-items:center;justify-content:center;
+    background:var(--pink-card);border:none;width:26px;height:26px;border-radius:8px;cursor:pointer;
+    font-size:12px;color:var(--navy);display:flex;align-items:center;justify-content:center;transition:all .15s ease;
   }
   .icon-btn:hover{background:var(--navy);color:var(--white);}
   .icon-btn.danger:hover{background:var(--red);}
-  .block-img-thumb{width:100%;max-width:220px;border-radius:10px;display:block;margin-bottom:8px;}
-  .nl-preview{
-    background:var(--pink-card);border-radius:16px;padding:20px;margin:14px 0 22px;
+  .block-img-thumb{width:100%;max-width:100%;border-radius:10px;display:block;margin-bottom:10px;aspect-ratio:16/9;object-fit:cover;}
+  .block-btn-row{display:flex;gap:8px;}
+  .block-btn-row input{flex:1;}
+
+  .nl-preview-sticky{position:sticky;top:0;}
+  .nl-preview{background:var(--pink-card);border-radius:18px;padding:18px;}
+  .nl-preview-inner{background:var(--white);border-radius:14px;overflow:hidden;box-shadow:0 14px 32px -20px rgba(20,63,100,0.35);}
+  .nl-preview-topbar{
+    display:flex;gap:6px;padding:10px 14px;background:#F5F5F5;border-bottom:1px solid #ECECEC;
   }
-  .nl-preview-inner{background:var(--white);border-radius:14px;overflow:hidden;max-width:420px;margin:0 auto;}
-  .nl-preview-header{background:var(--navy);color:var(--pink);padding:14px 20px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;}
+  .nl-preview-topbar span{width:8px;height:8px;border-radius:50%;background:#DDD;}
+  .nl-preview-header{background:var(--navy);padding:22px 24px;text-align:center;}
+  .nl-preview-header .wordmark{font-family:var(--display);color:var(--pink);font-size:20px;font-weight:800;}
+  .nl-preview-header .tagline{font-family:var(--body);color:var(--white);opacity:0.7;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
   .nl-preview-body img{width:100%;display:block;}
-  .nl-preview-body h2{font-family:Georgia,serif;font-size:19px;padding:18px 20px 4px;color:var(--navy);}
-  .nl-preview-body p{font-size:13.5px;padding:6px 20px;color:var(--navy);line-height:1.5;}
-  .nl-preview-body .btn-block{padding:14px 20px;}
+  .nl-preview-body h2{font-family:Georgia,serif;font-size:19px;padding:18px 22px 4px;color:var(--navy);}
+  .nl-preview-body p{font-size:13.5px;padding:6px 22px;color:var(--navy);line-height:1.55;}
+  .nl-preview-body .btn-block{padding:14px 22px;}
   .nl-preview-body .btn-block a{
-    display:inline-block;background:var(--navy);color:var(--white);padding:10px 20px;
+    display:inline-block;background:var(--navy);color:var(--white);padding:11px 22px;
     border-radius:999px;font-size:13px;font-weight:800;text-decoration:none;
   }
-  .nl-preview-footer{padding:16px 20px;border-top:1px solid #f0f0f0;font-size:11px;color:var(--navy);opacity:0.6;}
-  .nl-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .nl-preview-footer{padding:16px 22px 20px;border-top:1px solid #f0f0f0;}
+  .nl-preview-footer .fp-brand{font-size:11px;font-weight:800;color:var(--navy);opacity:0.7;margin-bottom:4px;}
+  .nl-preview-footer .fp-text{font-size:11px;color:var(--navy);opacity:0.55;line-height:1.6;}
+  .nl-preview-empty{padding:50px 24px;text-align:center;font-size:13px;opacity:0.45;}
+
+  .nl-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;padding-top:22px;border-top:1px solid #ECECEC;}
   .nl-actions .btn{width:auto;flex:1;min-width:160px;}
   .nl-schedule-row{display:flex;gap:10px;margin-top:14px;align-items:flex-end;}
   .nl-schedule-row .field{flex:1;margin-bottom:0;}
@@ -424,26 +460,39 @@
     <h3 id="nlBuilderTitle">Neuer Newsletter</h3>
     <input type="hidden" id="nl-id">
 
-    <div class="field">
+    <div class="field nl-subject-field">
       <label for="nl-subject">Betreff</label>
       <input type="text" id="nl-subject" required placeholder="z.B. VRauen Newsletter — August 2026">
     </div>
 
-    <div id="nlBlocksList"></div>
+    <div class="nl-builder-grid">
+      <div>
+        <div class="nl-col-label">Inhalt</div>
+        <div id="nlBlocksList"></div>
+        <div class="block-add-row">
+          <button type="button" class="block-add-btn" onclick="addBlock('image')"><span class="glyph">🖼</span> Bild</button>
+          <button type="button" class="block-add-btn" onclick="addBlock('heading')"><span class="glyph">H</span> Überschrift</button>
+          <button type="button" class="block-add-btn" onclick="addBlock('text')"><span class="glyph">¶</span> Text</button>
+          <button type="button" class="block-add-btn" onclick="addBlock('button')"><span class="glyph">⛶</span> Button</button>
+        </div>
+      </div>
 
-    <div class="block-add-row">
-      <button type="button" class="small-btn" onclick="addBlock('image')">+ Titelbild/Bild</button>
-      <button type="button" class="small-btn" onclick="addBlock('heading')">+ Überschrift</button>
-      <button type="button" class="small-btn" onclick="addBlock('text')">+ Text</button>
-      <button type="button" class="small-btn" onclick="addBlock('button')">+ Button</button>
-    </div>
-
-    <h4 style="font-size:14px;margin-bottom:4px;">Vorschau</h4>
-    <div class="nl-preview">
-      <div class="nl-preview-inner">
-        <div class="nl-preview-header">VRauen Newsletter</div>
-        <div class="nl-preview-body" id="nlPreviewBody"></div>
-        <div class="nl-preview-footer">Du erhältst diese Mail, weil du dich angemeldet hast. <u>Vom Newsletter abmelden</u> (Link wird automatisch ergänzt)</div>
+      <div class="nl-preview-sticky">
+        <div class="nl-col-label">Vorschau</div>
+        <div class="nl-preview">
+          <div class="nl-preview-inner">
+            <div class="nl-preview-topbar"><span></span><span></span><span></span></div>
+            <div class="nl-preview-header">
+              <div class="wordmark">VRauen</div>
+              <div class="tagline">Newsletter</div>
+            </div>
+            <div class="nl-preview-body" id="nlPreviewBody"></div>
+            <div class="nl-preview-footer">
+              <div class="fp-brand">VRauen · MakerPort Stralsund</div>
+              <div class="fp-text">Du erhältst diese Mail, weil du dich angemeldet hast.<br><u>Vom Newsletter abmelden</u> (Link wird automatisch ergänzt)</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -767,14 +816,21 @@
     renderNewsletterPreview();
   }
 
+  const BLOCK_GLYPHS = { image:'🖼', heading:'H', text:'¶', button:'⛶' };
+  const BLOCK_LABELS = { image:'Bild', heading:'Überschrift', text:'Text', button:'Button' };
+
   function renderBlocksEditor(){
     const el = document.getElementById('nlBlocksList');
     if (currentBlocks.length === 0){
-      el.innerHTML = '<p style="opacity:0.5;font-size:13px;margin-bottom:8px;">Noch keine Bausteine — unten hinzufügen.</p>';
+      el.innerHTML = '<p style="opacity:0.45;font-size:13px;margin-bottom:4px;">Noch keine Bausteine — unten hinzufügen.</p>';
       return;
     }
     el.innerHTML = currentBlocks.map((b, i) => {
-      const actions = `
+      const head = `
+        <div class="block-card-head">
+          <span class="glyph">${BLOCK_GLYPHS[b.type] || ''}</span>
+          <p class="block-label">${BLOCK_LABELS[b.type] || b.type}</p>
+        </div>
         <div class="block-card-actions">
           <button type="button" class="icon-btn" onclick="moveBlock(${i},-1)" title="Nach oben">↑</button>
           <button type="button" class="icon-btn" onclick="moveBlock(${i},1)" title="Nach unten">↓</button>
@@ -783,8 +839,7 @@
 
       if (b.type === 'image'){
         return `<div class="block-card">
-          ${actions}
-          <div class="block-label">Bild</div>
+          ${head}
           ${b.url ? `<img src="${escapeHTML(b.url)}" class="block-img-thumb">` : ''}
           <label class="img-upload" style="display:inline-block;">
             <span>${b.url ? 'Bild ändern…' : 'Bild auswählen…'}</span>
@@ -794,24 +849,23 @@
       }
       if (b.type === 'heading'){
         return `<div class="block-card">
-          ${actions}
-          <div class="block-label">Überschrift</div>
+          ${head}
           <input type="text" value="${escapeHTML(b.text)}" placeholder="Überschrift eingeben…" oninput="updateBlockField(${i},'text',this.value)">
         </div>`;
       }
       if (b.type === 'text'){
         return `<div class="block-card">
-          ${actions}
-          <div class="block-label">Text</div>
+          ${head}
           <textarea placeholder="Text eingeben…" oninput="updateBlockField(${i},'text',this.value)">${escapeHTML(b.text)}</textarea>
         </div>`;
       }
       if (b.type === 'button'){
         return `<div class="block-card">
-          ${actions}
-          <div class="block-label">Button</div>
-          <input type="text" value="${escapeHTML(b.text)}" placeholder="Button-Text" style="margin-bottom:8px;" oninput="updateBlockField(${i},'text',this.value)">
-          <input type="text" value="${escapeHTML(b.url)}" placeholder="Link (https://…)" oninput="updateBlockField(${i},'url',this.value)">
+          ${head}
+          <div class="block-btn-row">
+            <input type="text" value="${escapeHTML(b.text)}" placeholder="Button-Text" oninput="updateBlockField(${i},'text',this.value)">
+            <input type="text" value="${escapeHTML(b.url)}" placeholder="Link (https://…)" oninput="updateBlockField(${i},'url',this.value)">
+          </div>
         </div>`;
       }
       return '';
@@ -846,7 +900,7 @@
   function renderNewsletterPreview(){
     const el = document.getElementById('nlPreviewBody');
     if (currentBlocks.length === 0){
-      el.innerHTML = '<p style="opacity:0.5;padding:20px;">Vorschau erscheint hier, sobald Bausteine hinzugefügt werden.</p>';
+      el.innerHTML = '<div class="nl-preview-empty">Deine Vorschau erscheint hier,<br>sobald du Bausteine hinzufügst.</div>';
       return;
     }
     el.innerHTML = currentBlocks.map(b => {
