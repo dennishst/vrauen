@@ -88,6 +88,16 @@
   }
   .tab-btn.active{background:var(--navy);color:var(--white);}
 
+  .subtabs{display:flex;gap:6px;margin:0 0 20px;border-bottom:2px solid var(--pink-card);}
+  .subtab-btn{
+    padding:10px 4px;margin-right:22px;border:none;background:none;color:var(--navy);opacity:0.5;
+    font-family:var(--body);font-weight:700;font-size:13.5px;cursor:pointer;border-bottom:2px solid transparent;
+    margin-bottom:-2px;
+  }
+  .subtab-btn.active{opacity:1;border-bottom-color:var(--navy);}
+  .subpanel{display:none;}
+  .subpanel.active{display:block;}
+
   .panel{display:none;}
   .panel.active{display:block;}
 
@@ -299,39 +309,58 @@
 
   <main>
     <div class="tabs">
-      <button class="tab-btn active" data-tab="subscribers">Newsletteranmeldungen <span class="count-pill" id="countSubs">0</span></button>
-      <button class="tab-btn" data-tab="newsletter">Newsletter erstellen</button>
+      <button class="tab-btn active" data-tab="newsletter">Newsletter</button>
       <button class="tab-btn" data-tab="submissions">Einreichungen <span class="count-pill" id="countSubm">0</span></button>
       <button class="tab-btn" data-tab="events">Events <span class="count-pill" id="countEvents">0</span></button>
       <button class="tab-btn" data-tab="content">Inhalte <span class="count-pill" id="countContent">0</span></button>
     </div>
 
-    <!-- ---------- NEWSLETTERANMELDUNGEN ---------- -->
-    <div class="panel active" id="panel-subscribers">
-      <div class="note-box">
-        „Erhaltene Newsletter" und „Öffnungsrate" werden sichtbar, sobald der automatische Versand eingerichtet ist. Bis dahin kannst du alle bestätigten Adressen als CSV exportieren.
+    <!-- ---------- NEWSLETTER (übergeordnet) ---------- -->
+    <div class="panel active" id="panel-newsletter">
+      <div class="subtabs">
+        <button class="subtab-btn active" data-subtab="abonnenten">Abonnenten <span class="count-pill" id="countSubs">0</span></button>
+        <button class="subtab-btn" data-subtab="erstellen">Newsletter erstellen <span class="count-pill" id="countNlDrafts">0</span></button>
+        <button class="subtab-btn" data-subtab="verlauf">Verlauf <span class="count-pill" id="countNlHistory">0</span></button>
       </div>
-      <div class="toolbar">
-        <div class="toolbar-actions">
-          <button class="refresh-btn" onclick="loadSubscribers()">Aktualisieren</button>
-        </div>
-        <button class="add-btn" onclick="exportConfirmedCSV()">Bestätigte E-Mails als CSV exportieren</button>
-      </div>
-      <div class="card">
-        <div id="subscribersContent" class="loading">Lädt…</div>
-      </div>
-    </div>
 
-    <!-- ---------- NEWSLETTER ERSTELLEN ---------- -->
-    <div class="panel" id="panel-newsletter">
-      <div class="toolbar">
-        <div class="toolbar-actions">
+      <!-- ABONNENTEN -->
+      <div class="subpanel active" id="subpanel-abonnenten">
+        <div class="note-box">
+          „Erhaltene Newsletter" und „Öffnungsrate" werden sichtbar, sobald der automatische Versand eingerichtet ist. Bis dahin kannst du alle bestätigten Adressen als CSV exportieren.
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button class="refresh-btn" onclick="loadSubscribers()">Aktualisieren</button>
+          </div>
+          <button class="add-btn" onclick="exportConfirmedCSV()">Bestätigte E-Mails als CSV exportieren</button>
+        </div>
+        <div class="card">
+          <div id="subscribersContent" class="loading">Lädt…</div>
+        </div>
+      </div>
+
+      <!-- NEWSLETTER ERSTELLEN (Entwürfe) -->
+      <div class="subpanel" id="subpanel-erstellen">
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button class="refresh-btn" onclick="loadNewsletters()">Aktualisieren</button>
+          </div>
+          <button class="add-btn" onclick="openNewsletterBuilder()">+ Neuer Newsletter</button>
+        </div>
+        <div class="card">
+          <div id="newslettersDraftContent" class="loading">Lädt…</div>
+        </div>
+      </div>
+
+      <!-- VERLAUF (geplant / versendet / fehler) -->
+      <div class="subpanel" id="subpanel-verlauf">
+        <div class="toolbar">
+          <div></div>
           <button class="refresh-btn" onclick="loadNewsletters()">Aktualisieren</button>
         </div>
-        <button class="add-btn" onclick="openNewsletterBuilder()">+ Neuer Newsletter</button>
-      </div>
-      <div class="card">
-        <div id="newslettersContent" class="loading">Lädt…</div>
+        <div class="card">
+          <div id="newslettersHistoryContent" class="loading">Lädt…</div>
+        </div>
       </div>
     </div>
 
@@ -601,7 +630,8 @@
     whoLabel.textContent = 'Demo-Modus (Beispieldaten)';
     renderSubscribers(DEMO_SUBSCRIBERS);
     renderSubmissions(DEMO_SUBMISSIONS);
-    renderNewsletters(DEMO_NEWSLETTERS);
+    allNewsletters = DEMO_NEWSLETTERS;
+    renderNewsletterLists();
     renderEvents(DEMO_EVENTS);
     renderContent(DEMO_CONTENT);
   });
@@ -634,6 +664,16 @@
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  /* ---------- Sub-Tabs (innerhalb Newsletter) ---------- */
+  document.querySelectorAll('.subtab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.subpanel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
     });
   });
 
@@ -703,12 +743,20 @@
   let editingNewsletterId = null;
   let currentUserEmail = '';
 
+  let allNewsletters = [];
+
   async function loadNewsletters(){
-    const el = document.getElementById('newslettersContent');
-    el.className = 'loading'; el.textContent = 'Lädt…';
+    document.getElementById('newslettersDraftContent').className = 'loading';
+    document.getElementById('newslettersDraftContent').textContent = 'Lädt…';
+    document.getElementById('newslettersHistoryContent').className = 'loading';
+    document.getElementById('newslettersHistoryContent').textContent = 'Lädt…';
     const { data, error } = await sb.from('newsletters').select('*').order('created_at', { ascending: false });
-    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
-    renderNewsletters(data);
+    if (error){
+      document.getElementById('newslettersDraftContent').textContent = 'Fehler beim Laden: ' + error.message;
+      return;
+    }
+    allNewsletters = data;
+    renderNewsletterLists();
   }
 
   function newsletterStatusLabel(status){
@@ -718,11 +766,20 @@
     return { entwurf:'unbestaetigt', geplant:'unbestaetigt', wird_versendet:'unbestaetigt', versendet:'bestaetigt', fehler:'abgemeldet' }[status] || '';
   }
 
-  function renderNewsletters(data){
-    const el = document.getElementById('newslettersContent');
+  function renderNewsletterLists(){
+    const drafts = allNewsletters.filter(n => n.status === 'entwurf');
+    const history = allNewsletters.filter(n => n.status !== 'entwurf');
+    document.getElementById('countNlDrafts').textContent = drafts.length;
+    document.getElementById('countNlHistory').textContent = history.length;
+    renderNewsletterTable('newslettersDraftContent', drafts, 'Noch keine Entwürfe — oben auf „+ Neuer Newsletter" klicken.');
+    renderNewsletterTable('newslettersHistoryContent', history, 'Noch nichts geplant oder verschickt.');
+  }
+
+  function renderNewsletterTable(elId, data, emptyMsg){
+    const el = document.getElementById(elId);
     if (data.length === 0){
       el.className = 'empty-state';
-      el.textContent = 'Noch keine Newsletter erstellt.';
+      el.textContent = emptyMsg;
       return;
     }
     el.className = '';
@@ -755,7 +812,8 @@
     if (demoMode){
       const idx = DEMO_NEWSLETTERS.findIndex(n => n.id === id);
       if (idx > -1) DEMO_NEWSLETTERS.splice(idx, 1);
-      renderNewsletters(DEMO_NEWSLETTERS);
+      allNewsletters = DEMO_NEWSLETTERS;
+      renderNewsletterLists();
       return;
     }
     const { error } = await sb.from('newsletters').delete().eq('id', id);
@@ -926,7 +984,7 @@
         editingNewsletterId = 'dn-' + Date.now();
         DEMO_NEWSLETTERS.unshift({ id: editingNewsletterId, created_at: new Date().toISOString(), ...payload });
       }
-      renderNewsletters(DEMO_NEWSLETTERS);
+      renderNewsletterLists();
       return editingNewsletterId;
     }
 
