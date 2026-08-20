@@ -188,6 +188,42 @@
   .content-preview-img{width:60px;height:60px;border-radius:8px;object-fit:cover;}
   .content-key{font-family:monospace;font-size:12px;background:var(--pink-card);padding:2px 8px;border-radius:6px;}
   .content-val{max-width:320px;font-size:13px;opacity:0.8;}
+
+  /* ---------- Newsletter-Baukasten ---------- */
+  .nl-modal-box{max-width:760px;}
+  .block-add-row{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 22px;}
+  .block-card{
+    background:var(--pink-card);border-radius:14px;padding:16px 18px;margin-bottom:12px;position:relative;
+  }
+  .block-card .block-label{font-size:11.5px;font-weight:800;text-transform:uppercase;opacity:0.6;margin-bottom:8px;letter-spacing:0.03em;}
+  .block-card textarea{min-height:80px;}
+  .block-card-actions{display:flex;gap:6px;position:absolute;top:12px;right:14px;}
+  .icon-btn{
+    background:var(--white);border:none;width:28px;height:28px;border-radius:8px;cursor:pointer;
+    font-size:13px;color:var(--navy);display:flex;align-items:center;justify-content:center;
+  }
+  .icon-btn:hover{background:var(--navy);color:var(--white);}
+  .icon-btn.danger:hover{background:var(--red);}
+  .block-img-thumb{width:100%;max-width:220px;border-radius:10px;display:block;margin-bottom:8px;}
+  .nl-preview{
+    background:var(--pink-card);border-radius:16px;padding:20px;margin:14px 0 22px;
+  }
+  .nl-preview-inner{background:var(--white);border-radius:14px;overflow:hidden;max-width:420px;margin:0 auto;}
+  .nl-preview-header{background:var(--navy);color:var(--pink);padding:14px 20px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;}
+  .nl-preview-body img{width:100%;display:block;}
+  .nl-preview-body h2{font-family:Georgia,serif;font-size:19px;padding:18px 20px 4px;color:var(--navy);}
+  .nl-preview-body p{font-size:13.5px;padding:6px 20px;color:var(--navy);line-height:1.5;}
+  .nl-preview-body .btn-block{padding:14px 20px;}
+  .nl-preview-body .btn-block a{
+    display:inline-block;background:var(--navy);color:var(--white);padding:10px 20px;
+    border-radius:999px;font-size:13px;font-weight:800;text-decoration:none;
+  }
+  .nl-preview-footer{padding:16px 20px;border-top:1px solid #f0f0f0;font-size:11px;color:var(--navy);opacity:0.6;}
+  .nl-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .nl-actions .btn{width:auto;flex:1;min-width:160px;}
+  .nl-schedule-row{display:flex;gap:10px;margin-top:14px;align-items:flex-end;}
+  .nl-schedule-row .field{flex:1;margin-bottom:0;}
+  .status-badge-row{display:flex;gap:8px;align-items:center;}
 </style>
 </head>
 <body>
@@ -227,29 +263,15 @@
 
   <main>
     <div class="tabs">
-      <button class="tab-btn active" data-tab="members">Mitglieder <span class="count-pill" id="countMembers">0</span></button>
-      <button class="tab-btn" data-tab="subscribers">Newsletteranmeldungen <span class="count-pill" id="countSubs">0</span></button>
+      <button class="tab-btn active" data-tab="subscribers">Newsletteranmeldungen <span class="count-pill" id="countSubs">0</span></button>
       <button class="tab-btn" data-tab="newsletter">Newsletter erstellen</button>
       <button class="tab-btn" data-tab="submissions">Einreichungen <span class="count-pill" id="countSubm">0</span></button>
       <button class="tab-btn" data-tab="events">Events <span class="count-pill" id="countEvents">0</span></button>
       <button class="tab-btn" data-tab="content">Inhalte <span class="count-pill" id="countContent">0</span></button>
     </div>
 
-    <!-- ---------- MITGLIEDER ---------- -->
-    <div class="panel active" id="panel-members">
-      <div class="toolbar">
-        <div class="toolbar-actions">
-          <button class="refresh-btn" onclick="loadMembers()">Aktualisieren</button>
-        </div>
-        <button class="add-btn" onclick="openMemberModal()">+ Mitglied hinzufügen</button>
-      </div>
-      <div class="card">
-        <div id="membersContent" class="loading">Lädt…</div>
-      </div>
-    </div>
-
     <!-- ---------- NEWSLETTERANMELDUNGEN ---------- -->
-    <div class="panel" id="panel-subscribers">
+    <div class="panel active" id="panel-subscribers">
       <div class="note-box">
         „Erhaltene Newsletter" und „Öffnungsrate" werden sichtbar, sobald der automatische Versand eingerichtet ist. Bis dahin kannst du alle bestätigten Adressen als CSV exportieren.
       </div>
@@ -266,23 +288,12 @@
 
     <!-- ---------- NEWSLETTER ERSTELLEN ---------- -->
     <div class="panel" id="panel-newsletter">
-      <div class="note-box">
-        Der automatische Versand ist noch nicht aktiv. Entwürfe werden gespeichert und können später verschickt werden, sobald ein E-Mail-Versanddienst angebunden ist. Bis dahin: Entwurf speichern, dann über „Bestätigte E-Mails als CSV exportieren" die Empfängerliste ziehen und manuell versenden.
+      <div class="toolbar">
+        <div class="toolbar-actions">
+          <button class="refresh-btn" onclick="loadNewsletters()">Aktualisieren</button>
+        </div>
+        <button class="add-btn" onclick="openNewsletterBuilder()">+ Neuer Newsletter</button>
       </div>
-      <div class="card" style="padding:24px;">
-        <form id="newsletterForm">
-          <div class="field">
-            <label for="nl-subject">Betreff</label>
-            <input type="text" id="nl-subject" required placeholder="z.B. VRauen Newsletter — August 2026">
-          </div>
-          <div class="field">
-            <label for="nl-body">Inhalt</label>
-            <textarea id="nl-body" required placeholder="Text des Newsletters…"></textarea>
-          </div>
-          <button type="submit" class="btn btn-w-auto" id="nlSaveBtn">Als Entwurf speichern</button>
-        </form>
-      </div>
-      <h3 style="margin:28px 0 14px;font-size:17px;">Gespeicherte Entwürfe</h3>
       <div class="card">
         <div id="newslettersContent" class="loading">Lädt…</div>
       </div>
@@ -326,36 +337,6 @@
       </div>
     </div>
   </main>
-</div>
-
-<!-- ===== MITGLIED MODAL ===== -->
-<div class="modal-overlay" id="memberModalOverlay">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeMemberModal()" aria-label="Schließen">&times;</button>
-    <h3 id="memberModalTitle">Mitglied hinzufügen</h3>
-    <form id="memberForm">
-      <input type="hidden" id="mb-id">
-      <div class="field"><label for="mb-vorname">Vorname</label><input type="text" id="mb-vorname"></div>
-      <div class="field"><label for="mb-nachname">Nachname</label><input type="text" id="mb-nachname"></div>
-      <div class="field"><label for="mb-unternehmen">Unternehmen</label><input type="text" id="mb-unternehmen"></div>
-      <div class="field"><label for="mb-email">E-Mail *</label><input type="email" id="mb-email" required></div>
-      <div class="field"><label for="mb-telefon">Telefon</label><input type="text" id="mb-telefon"></div>
-      <label class="field-check"><input type="checkbox" id="mb-newsletter"><span>Newsletter-Anmeldung</span></label>
-      <div class="field">
-        <label for="mb-optin">Double-Opt-in Status</label>
-        <select id="mb-optin">
-          <option value="nicht_angemeldet">Nicht angemeldet</option>
-          <option value="unbestaetigt">Unbestätigt</option>
-          <option value="bestaetigt">Bestätigt</option>
-          <option value="abgemeldet">Abgemeldet</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" onclick="closeMemberModal()">Abbrechen</button>
-        <button type="submit" class="btn" id="memberSaveBtn">Speichern</button>
-      </div>
-    </form>
-  </div>
 </div>
 
 <!-- ===== EVENT MODAL ===== -->
@@ -436,6 +417,51 @@
   </div>
 </div>
 
+<!-- ===== NEWSLETTER BUILDER MODAL ===== -->
+<div class="modal-overlay" id="newsletterBuilderOverlay">
+  <div class="modal-box nl-modal-box">
+    <button class="modal-close" onclick="closeNewsletterBuilder()" aria-label="Schließen">&times;</button>
+    <h3 id="nlBuilderTitle">Neuer Newsletter</h3>
+    <input type="hidden" id="nl-id">
+
+    <div class="field">
+      <label for="nl-subject">Betreff</label>
+      <input type="text" id="nl-subject" required placeholder="z.B. VRauen Newsletter — August 2026">
+    </div>
+
+    <div id="nlBlocksList"></div>
+
+    <div class="block-add-row">
+      <button type="button" class="small-btn" onclick="addBlock('image')">+ Titelbild/Bild</button>
+      <button type="button" class="small-btn" onclick="addBlock('heading')">+ Überschrift</button>
+      <button type="button" class="small-btn" onclick="addBlock('text')">+ Text</button>
+      <button type="button" class="small-btn" onclick="addBlock('button')">+ Button</button>
+    </div>
+
+    <h4 style="font-size:14px;margin-bottom:4px;">Vorschau</h4>
+    <div class="nl-preview">
+      <div class="nl-preview-inner">
+        <div class="nl-preview-header">VRauen Newsletter</div>
+        <div class="nl-preview-body" id="nlPreviewBody"></div>
+        <div class="nl-preview-footer">Du erhältst diese Mail, weil du dich angemeldet hast. <u>Vom Newsletter abmelden</u> (Link wird automatisch ergänzt)</div>
+      </div>
+    </div>
+
+    <div class="nl-actions">
+      <button type="button" class="btn btn-secondary" onclick="handleSaveDraftClick()">Entwurf speichern</button>
+      <button type="button" class="btn btn-secondary" onclick="sendTestNewsletter()">Test an mich senden</button>
+      <button type="button" class="btn" onclick="sendNewsletterNow()">Jetzt an alle senden</button>
+    </div>
+    <div class="nl-schedule-row">
+      <div class="field">
+        <label for="nl-schedule-at">Für später planen</label>
+        <input type="datetime-local" id="nl-schedule-at">
+      </div>
+      <button type="button" class="btn btn-secondary btn-w-auto" onclick="scheduleNewsletter()">Planen</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const loginScreen = document.getElementById('loginScreen');
   const dashboard = document.getElementById('dashboard');
@@ -471,7 +497,7 @@
     loginScreen.style.display = 'none';
     dashboard.style.display = 'block';
     whoLabel.textContent = email;
-    loadMembers();
+    currentUserEmail = email;
     loadSubscribers();
     loadSubmissions();
     loadNewsletters();
@@ -480,12 +506,6 @@
   }
 
   /* ---------- Demo-Daten ---------- */
-  const DEMO_MEMBERS = [
-    { id:'dm-1', vorname:'Anne', nachname:'Liedtke', unternehmen:'MakerPort Stralsund', email:'anne@makerport.de', telefon:'03831 123456', newsletter_optin:true, optin_status:'bestaetigt' },
-    { id:'dm-2', vorname:'Merle-Marie', nachname:'Drüding', unternehmen:'Project Bay', email:'merle@example.de', telefon:'', newsletter_optin:true, optin_status:'bestaetigt' },
-    { id:'dm-3', vorname:'Karen', nachname:'Hoppenrath', unternehmen:'Landkreis Vorpommern-Rügen', email:'karen.h@vp-ruegen.de', telefon:'03831 654321', newsletter_optin:true, optin_status:'unbestaetigt' },
-    { id:'dm-4', vorname:'Eva-Maria', nachname:'Mertens', unternehmen:'Hochschule Stralsund', email:'eva.mertens@hochschule-stralsund.de', telefon:'', newsletter_optin:false, optin_status:'nicht_angemeldet' }
-  ];
   const DEMO_SUBSCRIBERS = [
     { email: 'merle@example.de', source: 'newsletter-box', status: 'bestaetigt', created_at: '2026-08-17T09:12:00Z' },
     { email: 'karen.h@vp-ruegen.de', source: 'kontakt-form', status: 'unbestaetigt', created_at: '2026-08-18T14:47:00Z' },
@@ -498,7 +518,14 @@
     { id: 'demo-3', type: 'vorschlag', name: '—', email: '—', message: 'Female Founders MV', created_at: '2026-08-10T16:00:00Z', read: true }
   ];
   const DEMO_NEWSLETTERS = [
-    { id:'dn-1', subject:'VRauen Newsletter — August 2026', body:'Liebe VRauen…', status:'entwurf', created_at:'2026-08-15T10:00:00Z' }
+    { id:'dn-1', subject:'VRauen Newsletter — August 2026', status:'entwurf', created_at:'2026-08-15T10:00:00Z',
+      blocks:[
+        { type:'heading', text:'Liebe VRauen,' },
+        { type:'text', text:'schön, dass du dabei bist! Hier die News des Monats.' },
+        { type:'button', text:'Zur Website', url:'https://vrauen.makerport.de' }
+      ] },
+    { id:'dn-2', subject:'Einladung: Herbsttreffen', status:'versendet', created_at:'2026-08-01T10:00:00Z', sent_at:'2026-08-02T09:00:00Z', sent_count:42,
+      blocks:[{ type:'heading', text:'Wir laden ein!' }] }
   ];
   const DEMO_EVENTS = [
     { id:'de-1', name:'VRauen Netzwerktreffen Herbst', ort:'MakerPort Stralsund', beschreibung:'Unser halbjährliches Treffen mit Vorträgen und Networking.', datum:'2026-09-24', zeit:'18:00', bild_url:null, anmeldung_moeglich:true },
@@ -523,7 +550,6 @@
     loginScreen.style.display = 'none';
     dashboard.style.display = 'block';
     whoLabel.textContent = 'Demo-Modus (Beispieldaten)';
-    renderMembers(DEMO_MEMBERS);
     renderSubscribers(DEMO_SUBSCRIBERS);
     renderSubmissions(DEMO_SUBMISSIONS);
     renderNewsletters(DEMO_NEWSLETTERS);
@@ -561,128 +587,6 @@
       document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
     });
   });
-
-  /* ============================================================
-     MITGLIEDER
-     ============================================================ */
-  async function loadMembers(){
-    const el = document.getElementById('membersContent');
-    el.className = 'loading'; el.textContent = 'Lädt…';
-    const { data, error } = await sb.from('members').select('*').order('created_at', { ascending: false });
-    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
-    renderMembers(data);
-  }
-
-  function renderMembers(data){
-    const el = document.getElementById('membersContent');
-    document.getElementById('countMembers').textContent = data.length;
-    if (data.length === 0){
-      el.className = 'empty-state';
-      el.textContent = 'Noch keine Mitglieder erfasst.';
-      return;
-    }
-    el.className = '';
-    el.innerHTML = `
-      <table>
-        <thead><tr>
-          <th>Vorname</th><th>Nachname</th><th>Unternehmen</th><th>E-Mail</th><th>Telefon</th>
-          <th>Newsletter</th><th>Double-Opt-in</th><th></th>
-        </tr></thead>
-        <tbody>
-          ${data.map(row => `
-            <tr>
-              <td>${escapeHTML(row.vorname || '—')}</td>
-              <td>${escapeHTML(row.nachname || '—')}</td>
-              <td>${escapeHTML(row.unternehmen || '—')}</td>
-              <td>${escapeHTML(row.email)}</td>
-              <td>${escapeHTML(row.telefon || '—')}</td>
-              <td>${row.newsletter_optin ? 'Ja' : 'Nein'}</td>
-              <td><span class="badge ${row.optin_status}">${row.optin_status.replace('_',' ')}</span></td>
-              <td>
-                <div class="row-actions">
-                  <button class="small-btn" onclick='openMemberModal(${JSON.stringify(row).replace(/'/g,"&#39;")})'>Bearbeiten</button>
-                  <button class="small-btn danger" onclick="deleteMember('${row.id}')">Löschen</button>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>`;
-  }
-
-  const memberModalOverlay = document.getElementById('memberModalOverlay');
-  const memberForm = document.getElementById('memberForm');
-
-  function openMemberModal(row){
-    document.getElementById('memberModalTitle').textContent = row ? 'Mitglied bearbeiten' : 'Mitglied hinzufügen';
-    document.getElementById('mb-id').value = row ? row.id : '';
-    document.getElementById('mb-vorname').value = row ? (row.vorname || '') : '';
-    document.getElementById('mb-nachname').value = row ? (row.nachname || '') : '';
-    document.getElementById('mb-unternehmen').value = row ? (row.unternehmen || '') : '';
-    document.getElementById('mb-email').value = row ? row.email : '';
-    document.getElementById('mb-telefon').value = row ? (row.telefon || '') : '';
-    document.getElementById('mb-newsletter').checked = row ? !!row.newsletter_optin : false;
-    document.getElementById('mb-optin').value = row ? row.optin_status : 'nicht_angemeldet';
-    memberModalOverlay.classList.add('open');
-  }
-  function closeMemberModal(){
-    memberModalOverlay.classList.remove('open');
-    memberForm.reset();
-  }
-  memberModalOverlay.addEventListener('click', (e) => { if (e.target === memberModalOverlay) closeMemberModal(); });
-
-  memberForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('mb-id').value;
-    const payload = {
-      vorname: document.getElementById('mb-vorname').value.trim() || null,
-      nachname: document.getElementById('mb-nachname').value.trim() || null,
-      unternehmen: document.getElementById('mb-unternehmen').value.trim() || null,
-      email: document.getElementById('mb-email').value.trim(),
-      telefon: document.getElementById('mb-telefon').value.trim() || null,
-      newsletter_optin: document.getElementById('mb-newsletter').checked,
-      optin_status: document.getElementById('mb-optin').value
-    };
-    const saveBtn = document.getElementById('memberSaveBtn');
-    saveBtn.disabled = true;
-
-    if (demoMode){
-      if (id){
-        const idx = DEMO_MEMBERS.findIndex(m => m.id === id);
-        if (idx > -1) DEMO_MEMBERS[idx] = { ...DEMO_MEMBERS[idx], ...payload };
-      } else {
-        DEMO_MEMBERS.unshift({ id:'dm-'+Date.now(), ...payload });
-      }
-      renderMembers(DEMO_MEMBERS);
-      saveBtn.disabled = false;
-      closeMemberModal();
-      return;
-    }
-
-    let error;
-    if (id){
-      ({ error } = await sb.from('members').update(payload).eq('id', id));
-    } else {
-      ({ error } = await sb.from('members').insert(payload));
-    }
-    saveBtn.disabled = false;
-    if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
-    closeMemberModal();
-    loadMembers();
-  });
-
-  async function deleteMember(id){
-    if (!confirm('Dieses Mitglied wirklich löschen?')) return;
-    if (demoMode){
-      const idx = DEMO_MEMBERS.findIndex(m => m.id === id);
-      if (idx > -1) DEMO_MEMBERS.splice(idx, 1);
-      renderMembers(DEMO_MEMBERS);
-      return;
-    }
-    const { error } = await sb.from('members').delete().eq('id', id);
-    if (error){ alert('Fehler beim Löschen: ' + error.message); return; }
-    loadMembers();
-  }
 
   /* ============================================================
      NEWSLETTERANMELDUNGEN (subscribers)
@@ -744,29 +648,11 @@
   }
 
   /* ============================================================
-     NEWSLETTER ERSTELLEN
+     NEWSLETTER ERSTELLEN (Baukasten)
      ============================================================ */
-  document.getElementById('newsletterForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const subject = document.getElementById('nl-subject').value.trim();
-    const body = document.getElementById('nl-body').value.trim();
-    const btn = document.getElementById('nlSaveBtn');
-    btn.disabled = true;
-
-    if (demoMode){
-      DEMO_NEWSLETTERS.unshift({ id:'dn-'+Date.now(), subject, body, status:'entwurf', created_at: new Date().toISOString() });
-      renderNewsletters(DEMO_NEWSLETTERS);
-      e.target.reset();
-      btn.disabled = false;
-      return;
-    }
-
-    const { error } = await sb.from('newsletters').insert({ subject, body, status: 'entwurf' });
-    btn.disabled = false;
-    if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
-    e.target.reset();
-    loadNewsletters();
-  });
+  let currentBlocks = [];
+  let editingNewsletterId = null;
+  let currentUserEmail = '';
 
   async function loadNewsletters(){
     const el = document.getElementById('newslettersContent');
@@ -776,27 +662,297 @@
     renderNewsletters(data);
   }
 
+  function newsletterStatusLabel(status){
+    return { entwurf:'Entwurf', geplant:'geplant', wird_versendet:'wird versendet', versendet:'versendet', fehler:'Fehler' }[status] || status;
+  }
+  function newsletterStatusClass(status){
+    return { entwurf:'unbestaetigt', geplant:'unbestaetigt', wird_versendet:'unbestaetigt', versendet:'bestaetigt', fehler:'abgemeldet' }[status] || '';
+  }
+
   function renderNewsletters(data){
     const el = document.getElementById('newslettersContent');
     if (data.length === 0){
       el.className = 'empty-state';
-      el.textContent = 'Noch keine Entwürfe gespeichert.';
+      el.textContent = 'Noch keine Newsletter erstellt.';
       return;
     }
     el.className = '';
     el.innerHTML = `
       <table>
-        <thead><tr><th>Betreff</th><th>Status</th><th>Erstellt am</th></tr></thead>
+        <thead><tr><th>Betreff</th><th>Status</th><th>Empfänger</th><th>Datum</th><th></th></tr></thead>
         <tbody>
           ${data.map(row => `
             <tr>
               <td>${escapeHTML(row.subject)}</td>
-              <td><span class="badge ${row.status}">${row.status}</span></td>
-              <td>${fmtDate(row.created_at)}</td>
+              <td><span class="badge ${newsletterStatusClass(row.status)}">${newsletterStatusLabel(row.status)}</span></td>
+              <td>${row.status === 'versendet' ? (row.sent_count || 0) : '—'}</td>
+              <td>${row.status === 'geplant' && row.scheduled_at ? fmtDate(row.scheduled_at) : fmtDate(row.sent_at || row.created_at)}</td>
+              <td>
+                <div class="row-actions">
+                  ${row.status === 'entwurf' || row.status === 'geplant'
+                    ? `<button class="small-btn" onclick='openNewsletterBuilder(${JSON.stringify(row).replace(/'/g,"&#39;")})'>Bearbeiten</button>`
+                    : `<button class="small-btn" onclick='openNewsletterBuilder(${JSON.stringify(row).replace(/'/g,"&#39;")}, true)'>Ansehen</button>`}
+                  <button class="small-btn danger" onclick="deleteNewsletter('${row.id}')">Löschen</button>
+                </div>
+              </td>
             </tr>
           `).join('')}
         </tbody>
       </table>`;
+  }
+
+  async function deleteNewsletter(id){
+    if (!confirm('Diesen Newsletter wirklich löschen?')) return;
+    if (demoMode){
+      const idx = DEMO_NEWSLETTERS.findIndex(n => n.id === id);
+      if (idx > -1) DEMO_NEWSLETTERS.splice(idx, 1);
+      renderNewsletters(DEMO_NEWSLETTERS);
+      return;
+    }
+    const { error } = await sb.from('newsletters').delete().eq('id', id);
+    if (error){ alert('Fehler beim Löschen: ' + error.message); return; }
+    loadNewsletters();
+  }
+
+  /* ---------- Builder öffnen/schließen ---------- */
+  const newsletterBuilderOverlay = document.getElementById('newsletterBuilderOverlay');
+
+  function openNewsletterBuilder(row, readOnly){
+    editingNewsletterId = row ? row.id : null;
+    document.getElementById('nlBuilderTitle').textContent = row ? (readOnly ? 'Newsletter ansehen' : 'Newsletter bearbeiten') : 'Neuer Newsletter';
+    document.getElementById('nl-id').value = row ? row.id : '';
+    document.getElementById('nl-subject').value = row ? row.subject : '';
+    currentBlocks = row && row.blocks ? JSON.parse(JSON.stringify(row.blocks)) : [];
+    document.getElementById('nl-schedule-at').value = row && row.scheduled_at ? row.scheduled_at.slice(0,16) : '';
+    renderBlocksEditor();
+    renderNewsletterPreview();
+    newsletterBuilderOverlay.classList.add('open');
+
+    document.querySelectorAll('#newsletterBuilderOverlay .block-add-row button, #newsletterBuilderOverlay .nl-actions button, #newsletterBuilderOverlay .nl-schedule-row button')
+      .forEach(btn => btn.style.display = readOnly ? 'none' : '');
+  }
+  function closeNewsletterBuilder(){
+    newsletterBuilderOverlay.classList.remove('open');
+    currentBlocks = [];
+    editingNewsletterId = null;
+  }
+  newsletterBuilderOverlay.addEventListener('click', (e) => { if (e.target === newsletterBuilderOverlay) closeNewsletterBuilder(); });
+
+  /* ---------- Bausteine verwalten ---------- */
+  function addBlock(type){
+    const defaults = {
+      image: { type:'image', url:'' },
+      heading: { type:'heading', text:'' },
+      text: { type:'text', text:'' },
+      button: { type:'button', text:'Mehr erfahren', url:'' }
+    };
+    currentBlocks.push({ ...defaults[type] });
+    renderBlocksEditor();
+    renderNewsletterPreview();
+  }
+  function removeBlock(i){
+    currentBlocks.splice(i, 1);
+    renderBlocksEditor();
+    renderNewsletterPreview();
+  }
+  function moveBlock(i, dir){
+    const j = i + dir;
+    if (j < 0 || j >= currentBlocks.length) return;
+    [currentBlocks[i], currentBlocks[j]] = [currentBlocks[j], currentBlocks[i]];
+    renderBlocksEditor();
+    renderNewsletterPreview();
+  }
+  function updateBlockField(i, field, value){
+    currentBlocks[i][field] = value;
+    renderNewsletterPreview();
+  }
+
+  function renderBlocksEditor(){
+    const el = document.getElementById('nlBlocksList');
+    if (currentBlocks.length === 0){
+      el.innerHTML = '<p style="opacity:0.5;font-size:13px;margin-bottom:8px;">Noch keine Bausteine — unten hinzufügen.</p>';
+      return;
+    }
+    el.innerHTML = currentBlocks.map((b, i) => {
+      const actions = `
+        <div class="block-card-actions">
+          <button type="button" class="icon-btn" onclick="moveBlock(${i},-1)" title="Nach oben">↑</button>
+          <button type="button" class="icon-btn" onclick="moveBlock(${i},1)" title="Nach unten">↓</button>
+          <button type="button" class="icon-btn danger" onclick="removeBlock(${i})" title="Entfernen">✕</button>
+        </div>`;
+
+      if (b.type === 'image'){
+        return `<div class="block-card">
+          ${actions}
+          <div class="block-label">Bild</div>
+          ${b.url ? `<img src="${escapeHTML(b.url)}" class="block-img-thumb">` : ''}
+          <label class="img-upload" style="display:inline-block;">
+            <span>${b.url ? 'Bild ändern…' : 'Bild auswählen…'}</span>
+            <input type="file" accept="image/*" style="display:none;" onchange="uploadBlockImage(${i}, this)">
+          </label>
+        </div>`;
+      }
+      if (b.type === 'heading'){
+        return `<div class="block-card">
+          ${actions}
+          <div class="block-label">Überschrift</div>
+          <input type="text" value="${escapeHTML(b.text)}" placeholder="Überschrift eingeben…" oninput="updateBlockField(${i},'text',this.value)">
+        </div>`;
+      }
+      if (b.type === 'text'){
+        return `<div class="block-card">
+          ${actions}
+          <div class="block-label">Text</div>
+          <textarea placeholder="Text eingeben…" oninput="updateBlockField(${i},'text',this.value)">${escapeHTML(b.text)}</textarea>
+        </div>`;
+      }
+      if (b.type === 'button'){
+        return `<div class="block-card">
+          ${actions}
+          <div class="block-label">Button</div>
+          <input type="text" value="${escapeHTML(b.text)}" placeholder="Button-Text" style="margin-bottom:8px;" oninput="updateBlockField(${i},'text',this.value)">
+          <input type="text" value="${escapeHTML(b.url)}" placeholder="Link (https://…)" oninput="updateBlockField(${i},'url',this.value)">
+        </div>`;
+      }
+      return '';
+    }).join('');
+  }
+
+  async function uploadBlockImage(i, input){
+    const file = input.files[0];
+    if (!file) return;
+
+    if (demoMode){
+      const reader = new FileReader();
+      reader.onload = () => {
+        currentBlocks[i].url = reader.result;
+        renderBlocksEditor();
+        renderNewsletterPreview();
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const filePath = `newsletter-${Date.now()}-${file.name}`;
+    const { error } = await sb.storage.from('site-images').upload(filePath, file, { upsert: true });
+    if (error){ alert('Fehler beim Bild-Upload: ' + error.message); return; }
+    const { data: urlData } = sb.storage.from('site-images').getPublicUrl(filePath);
+    currentBlocks[i].url = urlData.publicUrl;
+    renderBlocksEditor();
+    renderNewsletterPreview();
+  }
+
+  /* ---------- Live-Vorschau ---------- */
+  function renderNewsletterPreview(){
+    const el = document.getElementById('nlPreviewBody');
+    if (currentBlocks.length === 0){
+      el.innerHTML = '<p style="opacity:0.5;padding:20px;">Vorschau erscheint hier, sobald Bausteine hinzugefügt werden.</p>';
+      return;
+    }
+    el.innerHTML = currentBlocks.map(b => {
+      if (b.type === 'image') return b.url ? `<img src="${escapeHTML(b.url)}">` : '';
+      if (b.type === 'heading') return `<h2>${escapeHTML(b.text)}</h2>`;
+      if (b.type === 'text') return `<p>${escapeHTML(b.text).replace(/\n/g,'<br>')}</p>`;
+      if (b.type === 'button') return `<div class="btn-block"><a href="#" onclick="return false;">${escapeHTML(b.text)}</a></div>`;
+      return '';
+    }).join('');
+  }
+
+  /* ---------- Speichern / Versenden / Planen ---------- */
+  async function saveNewsletter(status, extra){
+    const subject = document.getElementById('nl-subject').value.trim();
+    if (!subject){ alert('Bitte einen Betreff eintragen.'); return null; }
+    const payload = { subject, blocks: currentBlocks, ...(status ? { status } : {}), ...(extra || {}) };
+
+    if (demoMode){
+      if (editingNewsletterId){
+        const idx = DEMO_NEWSLETTERS.findIndex(n => n.id === editingNewsletterId);
+        if (idx > -1) DEMO_NEWSLETTERS[idx] = { ...DEMO_NEWSLETTERS[idx], ...payload };
+      } else {
+        editingNewsletterId = 'dn-' + Date.now();
+        DEMO_NEWSLETTERS.unshift({ id: editingNewsletterId, created_at: new Date().toISOString(), ...payload });
+      }
+      renderNewsletters(DEMO_NEWSLETTERS);
+      return editingNewsletterId;
+    }
+
+    if (editingNewsletterId){
+      const { error } = await sb.from('newsletters').update(payload).eq('id', editingNewsletterId);
+      if (error){ alert('Fehler beim Speichern: ' + error.message); return null; }
+    } else {
+      const { data, error } = await sb.from('newsletters').insert(payload).select().single();
+      if (error){ alert('Fehler beim Speichern: ' + error.message); return null; }
+      editingNewsletterId = data.id;
+    }
+    loadNewsletters();
+    return editingNewsletterId;
+  }
+
+  async function handleSaveDraftClick(){
+    const id = await saveNewsletter('entwurf');
+    if (id) closeNewsletterBuilder();
+  }
+
+  async function sendTestNewsletter(){
+    const id = await saveNewsletter(editingNewsletterId ? undefined : 'entwurf');
+    if (!id) return;
+    if (demoMode){
+      alert('Demo-Modus: Test-Mail würde an ' + (currentUserEmail || 'deine Adresse') + ' gesendet.');
+      return;
+    }
+    const testEmail = prompt('Test-Mail senden an:', currentUserEmail || '');
+    if (!testEmail) return;
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-newsletter-test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ newsletterId: id, testEmail })
+    });
+    if (res.ok){
+      alert('Test-Mail wurde an ' + testEmail + ' gesendet.');
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert('Fehler beim Testversand: ' + (err.error || res.status));
+    }
+  }
+
+  async function sendNewsletterNow(){
+    if (!confirm('Newsletter jetzt an ALLE bestätigten Abonnentinnen senden? Das kann nicht rückgängig gemacht werden.')) return;
+    if (!confirm('Bist du dir wirklich sicher? Der Versand startet sofort.')) return;
+
+    const id = await saveNewsletter('entwurf');
+    if (!id) return;
+
+    if (demoMode){
+      alert('Demo-Modus: Newsletter würde jetzt an alle bestätigten Abonnentinnen gesendet.');
+      closeNewsletterBuilder();
+      return;
+    }
+
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-newsletter`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ newsletterId: id })
+    });
+    if (res.ok){
+      const result = await res.json();
+      alert(`Versand abgeschlossen: ${result.sentCount} von ${result.total} erfolgreich verschickt.`);
+      closeNewsletterBuilder();
+      loadNewsletters();
+    } else {
+      alert('Fehler beim Versand.');
+    }
+  }
+
+  async function scheduleNewsletter(){
+    const scheduleAt = document.getElementById('nl-schedule-at').value;
+    if (!scheduleAt){ alert('Bitte Datum und Uhrzeit wählen.'); return; }
+    const id = await saveNewsletter('geplant', { scheduled_at: new Date(scheduleAt).toISOString() });
+    if (id){
+      alert('Newsletter wurde für ' + new Date(scheduleAt).toLocaleString('de-DE') + ' geplant.');
+      closeNewsletterBuilder();
+    }
   }
 
   /* ============================================================
