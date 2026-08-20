@@ -199,6 +199,34 @@
   .content-key{font-family:monospace;font-size:12px;background:var(--pink-card);padding:2px 8px;border-radius:6px;}
   .content-val{max-width:320px;font-size:13px;opacity:0.8;}
 
+  /* ---------- Inhalte: Rich-Text + Vorschau ---------- */
+  .ct-modal-box{max-width:640px;}
+  .color-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .color-toolbar-label{font-size:12px;opacity:0.6;margin-right:2px;}
+  .color-swatch{
+    width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid #E3E3E3;padding:0;
+  }
+  .color-swatch:hover{border-color:var(--navy);}
+  .color-swatch-reset{
+    background:var(--white);border:1.5px solid #E3E3E3;border-radius:999px;padding:5px 12px;
+    font-size:11.5px;font-weight:700;color:var(--navy);cursor:pointer;font-family:var(--body);
+  }
+  .color-swatch-reset:hover{border-color:var(--navy);}
+  .richtext-editor{
+    width:100%;min-height:100px;padding:12px 14px;border-radius:12px;border:1.5px solid #E3E3E3;
+    font-family:var(--body);font-size:14.5px;color:var(--navy);background:var(--white);
+    outline:none;line-height:1.5;
+  }
+  .richtext-editor:focus{border-color:var(--navy);}
+  .ct-preview-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+  .ct-preview-label{font-size:11px;font-weight:800;text-transform:uppercase;opacity:0.5;margin-bottom:6px;}
+  .ct-preview-box{
+    border-radius:12px;padding:18px;min-height:70px;font-family:var(--display);font-size:17px;
+    font-weight:700;line-height:1.4;word-break:break-word;
+  }
+  .ct-preview-light{background:var(--pink-card);color:var(--navy);}
+  .ct-preview-dark{background:var(--navy);color:var(--white);}
+
   /* ---------- Newsletter-Baukasten ---------- */
   .nl-modal-box{max-width:980px;}
   .nl-subject-field{margin-bottom:22px;}
@@ -445,7 +473,7 @@
 
 <!-- ===== INHALTE MODAL ===== -->
 <div class="modal-overlay" id="contentModalOverlay">
-  <div class="modal-box">
+  <div class="modal-box ct-modal-box">
     <button class="modal-close" onclick="closeContentModal()" aria-label="Schließen">&times;</button>
     <h3 id="contentModalTitle">Feld bearbeiten</h3>
     <form id="contentForm">
@@ -462,10 +490,31 @@
           <option value="image">Bild</option>
         </select>
       </div>
+
       <div class="field" id="ct-text-field">
-        <label for="ct-value-text">Text</label>
-        <textarea id="ct-value-text"></textarea>
+        <label>Text</label>
+        <div class="color-toolbar">
+          <span class="color-toolbar-label">Markierten Text einfärben:</span>
+          <button type="button" class="color-swatch" style="background:#FFFFFF;" onclick="applyTextColor('#FFFFFF')" title="Weiß"></button>
+          <button type="button" class="color-swatch" style="background:#F9CBDD;" onclick="applyTextColor('#F9CBDD')" title="Rosa"></button>
+          <button type="button" class="color-swatch" style="background:#143F64;" onclick="applyTextColor('#143F64')" title="Blau"></button>
+          <button type="button" class="color-swatch" style="background:#000000;" onclick="applyTextColor('#000000')" title="Schwarz"></button>
+          <button type="button" class="color-swatch-reset" onclick="applyTextColor('')" title="Farbe entfernen">Zurücksetzen</button>
+        </div>
+        <div id="ct-value-richtext" class="richtext-editor" contenteditable="true"></div>
+
+        <div class="ct-preview-row">
+          <div class="ct-preview-col">
+            <div class="ct-preview-label">Vorschau — heller Hintergrund</div>
+            <div class="ct-preview-box ct-preview-light" id="ctPreviewLight"></div>
+          </div>
+          <div class="ct-preview-col">
+            <div class="ct-preview-label">Vorschau — dunkler Hintergrund</div>
+            <div class="ct-preview-box ct-preview-dark" id="ctPreviewDark"></div>
+          </div>
+        </div>
       </div>
+
       <div class="field" id="ct-image-field" style="display:none;">
         <label>Bild</label>
         <img id="ct-img-preview" class="img-preview" style="display:none;">
@@ -1351,6 +1400,12 @@
     renderContent(data);
   }
 
+  function stripHtml(html){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
+
   function renderContent(data){
     const el = document.getElementById('contentContent');
     document.getElementById('countContent').textContent = data.length;
@@ -1372,7 +1427,7 @@
               <td class="content-val">${
                 row.type === 'image'
                   ? (row.value ? `<img src="${escapeHTML(row.value)}" class="content-preview-img">` : '—')
-                  : escapeHTML((row.value || '—').slice(0,80))
+                  : escapeHTML(stripHtml(row.value || '—').slice(0,80))
               }</td>
               <td>${fmtDate(row.updated_at)}</td>
               <td>
@@ -1391,6 +1446,10 @@
   const contentForm = document.getElementById('contentForm');
   const ctImgPreview = document.getElementById('ct-img-preview');
   const ctImgUploadText = document.getElementById('ct-img-upload-text');
+  const ctRichtext = document.getElementById('ct-value-richtext');
+  const ctPreviewLight = document.getElementById('ctPreviewLight');
+  const ctPreviewDark = document.getElementById('ctPreviewDark');
+  let ctSavedSelection = null;
 
   document.getElementById('ct-type').addEventListener('change', (e) => {
     const isImage = e.target.value === 'image';
@@ -1411,8 +1470,42 @@
     reader.readAsDataURL(file);
   });
 
+  /* ---------- Farbauswahl im Rich-Text-Editor ---------- */
+  ctRichtext.addEventListener('mouseup', saveCtSelection);
+  ctRichtext.addEventListener('keyup', saveCtSelection);
+  ctRichtext.addEventListener('input', updateCtPreview);
+
+  function saveCtSelection(){
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0 && ctRichtext.contains(sel.anchorNode)){
+      ctSavedSelection = sel.getRangeAt(0).cloneRange();
+    }
+  }
+
+  function applyTextColor(color){
+    ctRichtext.focus();
+    if (ctSavedSelection){
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(ctSavedSelection);
+    }
+    if (color){
+      document.execCommand('foreColor', false, color);
+    } else {
+      document.execCommand('removeFormat', false, null);
+    }
+    updateCtPreview();
+  }
+
+  function updateCtPreview(){
+    const html = ctRichtext.innerHTML;
+    ctPreviewLight.innerHTML = html || '<span style="opacity:0.4;font-family:var(--body);font-weight:400;font-size:14px;">Vorschau erscheint hier…</span>';
+    ctPreviewDark.innerHTML = html || '<span style="opacity:0.5;font-family:var(--body);font-weight:400;font-size:14px;">Vorschau erscheint hier…</span>';
+  }
+
   function openContentModal(row){
     pendingContentFile = null;
+    ctSavedSelection = null;
     document.getElementById('contentModalTitle').textContent = row ? 'Feld bearbeiten' : 'Neues Feld';
     document.getElementById('ct-original-key').value = row ? row.key : '';
     document.getElementById('ct-key').value = row ? row.key : '';
@@ -1420,7 +1513,8 @@
     document.getElementById('ct-label').value = row ? row.label : '';
     document.getElementById('ct-type').value = row ? row.type : 'text';
     document.getElementById('ct-type').dispatchEvent(new Event('change'));
-    document.getElementById('ct-value-text').value = row && row.type === 'text' ? (row.value || '') : '';
+    ctRichtext.innerHTML = row && row.type === 'text' ? (row.value || '') : '';
+    updateCtPreview();
     if (row && row.type === 'image' && row.value){
       ctImgPreview.src = row.value;
       ctImgPreview.style.display = 'block';
@@ -1434,6 +1528,7 @@
   function closeContentModal(){
     contentModalOverlay.classList.remove('open');
     contentForm.reset();
+    ctRichtext.innerHTML = '';
     document.getElementById('ct-key').disabled = false;
     pendingContentFile = null;
     ctImgPreview.style.display = 'none';
@@ -1450,7 +1545,7 @@
     saveBtn.disabled = true;
 
     if (demoMode){
-      let value = type === 'text' ? document.getElementById('ct-value-text').value : (pendingContentFile ? ctImgPreview.src : null);
+      let value = type === 'text' ? ctRichtext.innerHTML : (pendingContentFile ? ctImgPreview.src : null);
       const idx = DEMO_CONTENT.findIndex(c => c.key === (originalKey || key));
       if (idx > -1){
         DEMO_CONTENT[idx] = { ...DEMO_CONTENT[idx], key, label, type, value, updated_at: new Date().toISOString() };
@@ -1480,7 +1575,7 @@
         value = existing ? existing.value : null;
       }
     } else {
-      value = document.getElementById('ct-value-text').value;
+      value = ctRichtext.innerHTML;
     }
 
     const payload = { key, label, type, value, updated_at: new Date().toISOString() };
