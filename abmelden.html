@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abmelden — VRauen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --navy:#143F64; --pink-card:#FCE5EE; --white:#FFFFFF; --red:#B3324A; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    font-family:'Nunito',-apple-system,sans-serif;background:var(--pink-card);color:var(--navy);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .box{
+    background:var(--white);border-radius:22px;padding:44px 36px;max-width:420px;width:100%;
+    text-align:center;box-shadow:0 20px 44px -26px rgba(20,63,100,0.45);
+  }
+  .icon{font-size:40px;margin-bottom:8px;}
+  h1{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:22px;margin-bottom:14px;}
+  p{line-height:1.6;font-size:15px;opacity:0.9;margin-bottom:26px;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  a.btn{
+    display:inline-block;text-decoration:none;padding:13px 24px;border-radius:999px;
+    font-weight:800;font-size:14px;
+  }
+  a.btn-primary{background:var(--red);color:var(--white);}
+  a.btn-secondary{background:var(--pink-card);color:var(--navy);}
+</style>
+</head>
+<body>
+  <div class="box" id="content">
+    <div class="icon">🤔</div>
+    <h1>Wirklich abmelden?</h1>
+    <p>Schade! Wenn du dich abmeldest, erhältst du keine VRauen-Newsletter mehr. Du kannst dich jederzeit wieder anmelden.</p>
+    <div class="btn-row">
+      <a href="#" class="btn btn-primary" id="confirmBtn">Ja, abmelden</a>
+      <a href="/" class="btn btn-secondary">Doch nicht</a>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://zdndcmxxcxvjloftohhg.supabase.co';
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const email = params.get('email');
+    const status = params.get('status');
+
+    if (status === 'notfound') {
+      document.getElementById('content').innerHTML = `
+        <div class="icon">🔍</div>
+        <h1>Kein Abo gefunden</h1>
+        <p>Zu diesem Link konnten wir keine Newsletter-Anmeldung finden. Falls dies eine Test-Mail war, ist das normal — Test-Mails sind nicht mit einem echten Abo verknüpft. Bist du dir sicher, dass du bereits angemeldet warst?</p>
+        <div class="btn-row"><a href="/" class="btn btn-secondary">Zur Website</a></div>
+      `;
+    } else if (!token || !email) {
+      document.getElementById('content').innerHTML = `
+        <div class="icon">⚠️</div>
+        <h1>Link unvollständig</h1>
+        <p>Dieser Abmelde-Link ist nicht vollständig. Bitte nutze den Link direkt aus der E-Mail.</p>
+        <div class="btn-row"><a href="/" class="btn btn-secondary">Zur Website</a></div>
+      `;
+    } else {
+      document.getElementById('confirmBtn').href =
+        `${SUPABASE_URL}/functions/v1/unsubscribe?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}&confirm=true`;
+    }
+  </script>
+</body>
+</html>
