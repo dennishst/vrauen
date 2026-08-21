@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Events — VRauen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://zdndcmxxcxvjloftohhg.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_jqU_8wVSce7-uBO1s5oETA__xf2Z0R_';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<style>
+  :root{
+    --navy:#143F64; --navy-soft:#2C567E; --pink:#F9CBDD; --pink-card:#FCE5EE; --pink-deep:#F3A9C4; --white:#FFFFFF;
+    --r-xs:10px; --r-sm:16px; --r-md:22px; --r-lg:30px; --r-pill:999px;
+    --display:"Baloo 2","Nunito",sans-serif; --body:"Nunito",-apple-system,sans-serif; --maxw:880px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--body);background:var(--pink-card);color:var(--navy);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
+  h1,h2,h3{font-family:var(--display);font-weight:800;color:var(--navy);}
+
+  header{padding:22px 0;}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:var(--display);font-weight:800;font-size:19px;color:var(--navy);text-decoration:none;}
+  .back-link{font-size:13px;font-weight:700;color:var(--navy);text-decoration:none;opacity:0.7;}
+  .back-link:hover{opacity:1;}
+
+  .page-head{padding:16px 0 34px;}
+  .page-head h1{font-size:32px;margin-bottom:8px;}
+  .page-head p{opacity:0.75;font-size:15px;}
+
+  .event-list{display:flex;flex-direction:column;gap:16px;padding-bottom:70px;}
+  .event-row{
+    display:grid;grid-template-columns:120px 1fr auto;gap:20px;align-items:center;
+    background:var(--white);border-radius:var(--r-md);padding:16px;text-decoration:none;color:inherit;
+    box-shadow:0 14px 34px -24px rgba(20,63,100,0.3);transition:transform .15s ease;
+  }
+  .event-row:hover{transform:translateY(-2px);}
+  .event-row .img{width:120px;height:120px;border-radius:14px;overflow:hidden;background:var(--pink);flex:none;}
+  .event-row .img img{width:100%;height:100%;object-fit:cover;display:block;}
+  .event-row .img.placeholder{display:flex;align-items:center;justify-content:center;color:var(--navy);opacity:0.3;font-size:11px;text-align:center;}
+  .event-row .meta{font-size:12px;font-weight:800;text-transform:uppercase;color:var(--navy-soft);letter-spacing:0.03em;margin-bottom:4px;}
+  .event-row h3{font-size:18px;}
+  .event-row .thema{font-size:13.5px;opacity:0.7;margin-top:2px;}
+  .event-row .arrow{font-size:22px;opacity:0.4;}
+  @media (max-width:560px){
+    .event-row{grid-template-columns:70px 1fr;}
+    .event-row .img{width:70px;height:70px;}
+    .event-row .arrow{display:none;}
+  }
+
+  .empty-state{text-align:center;padding:60px 0;opacity:0.6;}
+  footer{padding:30px 0 50px;text-align:center;font-size:12px;opacity:0.55;}
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="wrap">
+      <a href="/" class="logo">VRauen</a>
+      <a href="/" class="back-link">← Zur Website</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <h1>Kommende Events</h1>
+      <p>Alle Treffen von VRauen auf einen Blick — klick auf ein Event für Details und Anmeldung.</p>
+    </div>
+    <div class="event-list" id="eventList">
+      <div class="empty-state">Lädt…</div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">© 2026 VRauen</div>
+  </footer>
+
+<script>
+  function escapeHTML(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function fmtDatum(d, z){
+    if(!d) return '';
+    const [y,m,day] = d.split('-');
+    return `${day}.${m}.${y}` + (z ? ' · ' + z.slice(0,5) + ' Uhr' : '');
+  }
+
+  async function loadEvents(){
+    const el = document.getElementById('eventList');
+    const today = new Date().toISOString().slice(0,10);
+    const { data, error } = await sb
+      .from('events')
+      .select('*')
+      .gte('datum', today)
+      .order('datum', { ascending: true });
+
+    if (error || !data || data.length === 0){
+      el.innerHTML = '<div class="empty-state">Aktuell sind keine Events geplant. Schau bald wieder vorbei!</div>';
+      return;
+    }
+
+    el.innerHTML = data.map(ev => `
+      <a class="event-row" href="/event.html?id=${ev.id}">
+        <div class="img ${ev.bild_url ? '' : 'placeholder'}">
+          ${ev.bild_url ? `<img src="${escapeHTML(ev.bild_url)}" alt="${escapeHTML(ev.name)}">` : 'Kein Bild'}
+        </div>
+        <div>
+          <div class="meta">${fmtDatum(ev.datum, ev.zeit)}${ev.ort ? ' · ' + escapeHTML(ev.ort) : ''}</div>
+          <h3>${escapeHTML(ev.name)}</h3>
+          ${ev.speakerin ? `<div class="thema">${escapeHTML(ev.speakerin)}${ev.thema ? ' · ' + escapeHTML(ev.thema) : ''}</div>` : ''}
+        </div>
+        <div class="arrow">→</div>
+      </a>
+    `).join('');
+  }
+
+  loadEvents();
+</script>
+
+</body>
+</html>
