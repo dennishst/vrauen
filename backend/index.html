@@ -1388,6 +1388,15 @@
     return `${day}.${m}.${y}` + (z ? ' · ' + z.slice(0,5) + ' Uhr' : '');
   }
 
+  function copyEventLink(id){
+    const url = `https://vrauen.makerport.de/event.html?id=${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Link kopiert:\n' + url);
+    }).catch(() => {
+      prompt('Link zum Kopieren:', url);
+    });
+  }
+
   function renderEvents(data){
     const el = document.getElementById('eventsContent');
     document.getElementById('countEvents').textContent = data.length;
@@ -1413,6 +1422,10 @@
             <button class="small-btn" onclick='openEventModal(${JSON.stringify(row).replace(/'/g,"&#39;")})'>Bearbeiten</button>
             <button class="small-btn" onclick="openAttendeesModal('${row.id}', ${JSON.stringify(row.name).replace(/'/g,"&#39;")})">Teilnehmerinnen</button>
             <button class="small-btn danger" onclick="deleteEvent('${row.id}')">Löschen</button>
+          </div>
+          <div class="footer" style="border-top:1px dashed #ECECEC;margin-top:2px;padding-top:12px;">
+            <button class="small-btn" onclick="copyEventLink('${row.id}')">Link kopieren</button>
+            <a class="small-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="https://vrauen.makerport.de/event.html?id=${row.id}" target="_blank" rel="noopener">Landingpage ansehen</a>
           </div>
         </div>
       `).join('')}
