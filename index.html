@@ -1067,7 +1067,7 @@
       <button class="modal-close" onclick="closeModal()" aria-label="Schließen">&times;</button>
       <h3>Thema einreichen</h3>
       <p class="modal-sub">Erzähl uns kurz von deiner Idee als Speakerin — wir melden uns bei dir.</p>
-      <form id="themaForm">
+      <form id="themaForm" novalidate>
         <div class="form-field"><label for="th-topic">Dein Themenvorschlag *</label><textarea id="th-topic" required placeholder="Worüber möchtest du bei VRauen sprechen?"></textarea></div>
         <div class="form-field"><label for="th-name">Name *</label><input type="text" id="th-name" required></div>
         <div class="form-field"><label for="th-mail">E-Mail *</label><input type="email" id="th-mail" required></div>
@@ -1085,7 +1085,7 @@
       <button class="modal-close" onclick="closeModal()" aria-label="Schließen">&times;</button>
       <h3>Direkt in Kontakt kommen</h3>
       <p class="modal-sub">Schreib uns kurz — wir melden uns so schnell wie möglich zurück.</p>
-      <form id="kontaktForm">
+      <form id="kontaktForm" novalidate>
         <div class="form-field"><label for="kt-msg">Deine Nachricht *</label><textarea id="kt-msg" required placeholder="Worum geht es?"></textarea></div>
         <div class="form-field"><label for="kt-name">Name *</label><input type="text" id="kt-name" required></div>
         <div class="form-field"><label for="kt-mail">E-Mail *</label><input type="email" id="kt-mail" required></div>
@@ -1159,7 +1159,7 @@
       <button class="modal-close" onclick="closeModal()" aria-label="Schließen">&times;</button>
       <h3>Netzwerk vorschlagen</h3>
       <p class="modal-sub">Kennst du ein Netzwerk, das hier noch fehlt? Sag uns Bescheid.</p>
-      <form id="vorschlagForm">
+      <form id="vorschlagForm" novalidate>
         <div class="form-field"><label for="vs-name">Name des Netzwerks *</label><input type="text" id="vs-name" required></div>
         <div class="form-field"><label for="vs-web">Website</label><input type="text" id="vs-web" placeholder="www.beispiel.de"></div>
         <button type="submit" class="btn btn-navy modal-submit">Vorschlag senden</button>
@@ -1186,11 +1186,19 @@
       const topic = document.getElementById('th-topic').value.trim();
       const name = document.getElementById('th-name').value.trim();
       const mail = document.getElementById('th-mail').value.trim();
+      const privacyChecked = document.getElementById('th-privacy').checked;
       const wantsNewsletter = document.getElementById('th-newsletter').checked;
       const note = document.getElementById('th-note');
       const errorMsg = document.getElementById('th-error');
-      submitBtn.disabled = true;
       errorMsg.style.display = 'none';
+
+      if (!topic || !name || !mail || !privacyChecked) {
+        errorMsg.textContent = 'Bitte fülle alle Pflichtfelder aus und bestätige die Datenschutzerklärung.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
       try {
         await addSubmission('thema', { name, email: mail, message: topic, extra: { newsletter: wantsNewsletter } });
         if (wantsNewsletter) {
@@ -1209,11 +1217,19 @@
       const msg = document.getElementById('kt-msg').value.trim();
       const name = document.getElementById('kt-name').value.trim();
       const mail = document.getElementById('kt-mail').value.trim();
+      const privacyChecked = document.getElementById('kt-privacy').checked;
       const wantsNewsletter = document.getElementById('kt-newsletter').checked;
       const note = document.getElementById('kt-note');
       const errorMsg = document.getElementById('kt-error');
-      submitBtn.disabled = true;
       errorMsg.style.display = 'none';
+
+      if (!msg || !name || !mail || !privacyChecked) {
+        errorMsg.textContent = 'Bitte fülle alle Pflichtfelder aus und bestätige die Datenschutzerklärung.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
       try {
         await addSubmission('kontakt', { name, email: mail, message: msg, extra: { newsletter: wantsNewsletter } });
         if (wantsNewsletter) {
@@ -1233,8 +1249,15 @@
       const web = document.getElementById('vs-web').value.trim();
       const note = document.getElementById('vs-note');
       const errorMsg = document.getElementById('vs-error');
-      submitBtn.disabled = true;
       errorMsg.style.display = 'none';
+
+      if (!name) {
+        errorMsg.textContent = 'Bitte gib einen Namen für das Netzwerk ein.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
       try {
         await addSubmission('vorschlag', { message: name, extra: { website: web || null } });
         note.classList.add('show');
