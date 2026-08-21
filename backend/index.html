@@ -407,6 +407,12 @@
 
     <!-- ---------- EINREICHUNGEN ---------- -->
     <div class="panel" id="panel-submissions">
+      <div class="subtabs">
+        <button class="subtab-btn active" data-subfilter="alle">Alle <span class="count-pill" id="countSubmAlle">0</span></button>
+        <button class="subtab-btn" data-subfilter="thema">Thema <span class="count-pill" id="countSubmThema">0</span></button>
+        <button class="subtab-btn" data-subfilter="kontakt">Kontakt <span class="count-pill" id="countSubmKontakt">0</span></button>
+        <button class="subtab-btn" data-subfilter="vorschlag">Vorschlag <span class="count-pill" id="countSubmVorschlag">0</span></button>
+      </div>
       <div class="toolbar">
         <div></div>
         <button class="refresh-btn" onclick="loadSubmissions()">Aktualisieren</button>
@@ -558,6 +564,15 @@
       <input type="hidden" id="sub-type">
       <label class="sub-reply-label" for="sub-reply-text">Antwort per E-Mail senden</label>
       <div class="field">
+        <label for="sub-reply-subject">Betreff</label>
+        <input type="text" id="sub-reply-subject" placeholder="z.B. Antwort auf deine Anfrage bei VRauen">
+      </div>
+      <div class="field">
+        <label for="sub-reply-sender">Von (Absendername)</label>
+        <input type="text" id="sub-reply-sender" placeholder="z.B. Merle von VRauen">
+      </div>
+      <div class="field">
+        <label for="sub-reply-text">Nachricht</label>
         <textarea id="sub-reply-text" placeholder="Deine Antwort…" style="min-height:120px;"></textarea>
       </div>
       <div class="modal-actions">
@@ -678,9 +693,9 @@
     { email: 'lena.k@beispiel.de', source: 'newsletter-box', status: 'abgemeldet', created_at: '2026-07-30T11:20:00Z' }
   ];
   const DEMO_SUBMISSIONS = [
-    { id: 'demo-1', type: 'kontakt', name: 'Karen Hoppenrath', email: 'karen.h@vp-ruegen.de', message: 'Könnt ihr mir Infos zum nächsten Treffen schicken?', created_at: '2026-08-18T14:47:00Z', read: false },
-    { id: 'demo-2', type: 'thema', name: 'Eva-Maria Mertens', email: 'eva.mertens@hochschule-stralsund.de', message: 'Ich würde gern über Frauen in MINT-Berufen sprechen.', created_at: '2026-08-19T08:03:00Z', read: false },
-    { id: 'demo-3', type: 'vorschlag', name: '—', email: '—', message: 'Female Founders MV', created_at: '2026-08-10T16:00:00Z', read: true }
+    { id: 'demo-1', type: 'kontakt', vorname: 'Karen', nachname: 'Hoppenrath', unternehmen: 'Landkreis Vorpommern-Rügen', email: 'karen.h@vp-ruegen.de', message: 'Könnt ihr mir Infos zum nächsten Treffen schicken?', created_at: '2026-08-18T14:47:00Z', read: false },
+    { id: 'demo-2', type: 'thema', vorname: 'Eva-Maria', nachname: 'Mertens', unternehmen: 'Hochschule Stralsund', email: 'eva.mertens@hochschule-stralsund.de', message: 'Ich würde gern über Frauen in MINT-Berufen sprechen.', created_at: '2026-08-19T08:03:00Z', read: false },
+    { id: 'demo-3', type: 'vorschlag', name: 'Female Founders MV', email: null, message: 'Female Founders MV', created_at: '2026-08-10T16:00:00Z', read: true }
   ];
   const DEMO_NEWSLETTERS = [
     { id:'dn-1', subject:'VRauen Newsletter — August 2026', status:'entwurf', created_at:'2026-08-15T10:00:00Z',
@@ -716,6 +731,7 @@
     dashboard.style.display = 'block';
     whoLabel.textContent = 'Demo-Modus (Beispieldaten)';
     renderSubscribers(DEMO_SUBSCRIBERS);
+    allSubmissions = DEMO_SUBMISSIONS;
     renderSubmissions(DEMO_SUBMISSIONS);
     allNewsletters = DEMO_NEWSLETTERS;
     renderNewsletterLists();
@@ -755,12 +771,23 @@
   });
 
   /* ---------- Sub-Tabs (innerhalb Newsletter) ---------- */
-  document.querySelectorAll('.subtab-btn').forEach(btn => {
+  document.querySelectorAll('.subtab-btn[data-subtab]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.subtab-btn[data-subtab]').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.subpanel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
+    });
+  });
+
+  /* ---------- Filter-Reiter (innerhalb Einreichungen) ---------- */
+  let currentSubmissionFilter = 'alle';
+  document.querySelectorAll('.subtab-btn[data-subfilter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.subtab-btn[data-subfilter]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSubmissionFilter = btn.dataset.subfilter;
+      renderSubmissions(allSubmissions);
     });
   });
 
@@ -1157,37 +1184,52 @@
   /* ============================================================
      EINREICHUNGEN
      ============================================================ */
+  let allSubmissions = [];
+
   async function loadSubmissions(){
     const el = document.getElementById('submissionsContent');
     el.className = 'loading'; el.textContent = 'Lädt…';
     const { data, error } = await sb.from('form_submissions').select('*').order('created_at', { ascending: false });
     if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+    allSubmissions = data;
     renderSubmissions(data);
   }
 
   function renderSubmissions(data){
     const el = document.getElementById('submissionsContent');
     document.getElementById('countSubm').textContent = data.length;
-    if (data.length === 0){
+    document.getElementById('countSubmAlle').textContent = data.length;
+    document.getElementById('countSubmThema').textContent = data.filter(s => s.type === 'thema').length;
+    document.getElementById('countSubmKontakt').textContent = data.filter(s => s.type === 'kontakt').length;
+    document.getElementById('countSubmVorschlag').textContent = data.filter(s => s.type === 'vorschlag').length;
+
+    const filtered = currentSubmissionFilter === 'alle' ? data : data.filter(s => s.type === currentSubmissionFilter);
+
+    if (filtered.length === 0){
       el.className = 'empty-state';
-      el.textContent = 'Noch keine Einreichungen.';
+      el.textContent = 'Keine Einreichungen in dieser Ansicht.';
       return;
     }
     el.className = '';
     el.innerHTML = `
       <table>
-        <thead><tr><th>Typ</th><th>Name</th><th>E-Mail</th><th>Nachricht</th><th>Datum</th><th>Status</th></tr></thead>
+        <thead><tr><th>Typ</th><th>Name</th><th>Unternehmen</th><th>E-Mail</th><th>Nachricht</th><th>Datum</th><th>Status</th></tr></thead>
         <tbody>
-          ${data.map(row => `
+          ${filtered.map(row => {
+            const fullName = row.vorname || row.nachname
+              ? [row.vorname, row.nachname].filter(Boolean).join(' ')
+              : (row.name || '—');
+            return `
             <tr class="clickable-row" onclick='openSubmissionModal(${JSON.stringify(row).replace(/'/g,"&#39;")})'>
-              <td>${escapeHTML(row.type)}</td>
-              <td>${escapeHTML(row.name || '—')}</td>
+              <td>${escapeHTML(TYPE_LABELS[row.type] || row.type)}</td>
+              <td>${escapeHTML(fullName)}</td>
+              <td>${escapeHTML(row.unternehmen || '—')}</td>
               <td>${escapeHTML(row.email || '—')}</td>
               <td class="msg-cell">${escapeHTML((row.message || '—').slice(0,80))}</td>
               <td>${fmtDate(row.created_at)}</td>
               <td><span class="badge ${row.read ? 'read' : 'unread'}">${row.read ? 'gelesen' : 'neu'}</span></td>
-            </tr>
-          `).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>`;
   }
@@ -1209,9 +1251,13 @@
   const TYPE_LABELS = { thema: 'Themenvorschlag', kontakt: 'Kontaktanfrage', vorschlag: 'Netzwerk-Vorschlag' };
 
   function openSubmissionModal(row){
+    const fullName = row.vorname || row.nachname
+      ? [row.vorname, row.nachname].filter(Boolean).join(' ')
+      : (row.name || '—');
     document.getElementById('subModalTitle').textContent = TYPE_LABELS[row.type] || row.type;
     document.getElementById('subDetailGrid').innerHTML = `
-      <dt>Name</dt><dd>${escapeHTML(row.name || '—')}</dd>
+      <dt>Name</dt><dd>${escapeHTML(fullName)}</dd>
+      <dt>Unternehmen</dt><dd>${escapeHTML(row.unternehmen || '—')}</dd>
       <dt>E-Mail</dt><dd>${escapeHTML(row.email || '—')}</dd>
       <dt>Datum</dt><dd>${fmtDate(row.created_at)}</dd>
       <dt>Status</dt><dd><span class="badge ${row.read ? 'read' : 'unread'}">${row.read ? 'gelesen' : 'neu'}</span></dd>
@@ -1220,12 +1266,12 @@
     document.getElementById('sub-id').value = row.id;
     document.getElementById('sub-email').value = row.email || '';
     document.getElementById('sub-type').value = row.type;
+    document.getElementById('sub-reply-subject').value = 'Antwort auf deine ' + (TYPE_LABELS[row.type] || row.type) + ' bei VRauen';
+    document.getElementById('sub-reply-sender').value = 'Merle von VRauen';
     document.getElementById('sub-reply-text').value = '';
     document.getElementById('subReplyStatus').style.display = 'none';
 
     const replyForm = document.getElementById('subReplyForm');
-    const replyLabel = document.querySelector('.sub-reply-label');
-    const replyBtn = document.getElementById('subReplySendBtn');
     if (row.email){
       replyForm.style.display = '';
     } else {
@@ -1248,6 +1294,8 @@
     const id = document.getElementById('sub-id').value;
     const toEmail = document.getElementById('sub-email').value;
     const type = document.getElementById('sub-type').value;
+    const subject = document.getElementById('sub-reply-subject').value.trim();
+    const senderName = document.getElementById('sub-reply-sender').value.trim();
     const replyText = document.getElementById('sub-reply-text').value.trim();
     const statusEl = document.getElementById('subReplyStatus');
     const sendBtn = document.getElementById('subReplySendBtn');
@@ -1273,7 +1321,13 @@
       const res = await fetch(`${SUPABASE_URL}/functions/v1/reply-to-submission`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ toEmail, type: TYPE_LABELS[type] || type, replyText })
+        body: JSON.stringify({
+          toEmail,
+          type: TYPE_LABELS[type] || type,
+          subject: subject || undefined,
+          senderName: senderName || undefined,
+          replyText
+        })
       });
       if (res.ok){
         statusEl.textContent = 'Antwort wurde gesendet.';
