@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event — VRauen</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://zdndcmxxcxvjloftohhg.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_jqU_8wVSce7-uBO1s5oETA__xf2Z0R_';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const MAIL_TO = 'vrauen@makerport.de';
+</script>
+<style>
+  :root{
+    --navy:#143F64; --navy-soft:#2C567E; --pink:#F9CBDD; --pink-card:#FCE5EE; --pink-deep:#F3A9C4; --white:#FFFFFF;
+    --r-xs:10px; --r-sm:16px; --r-md:22px; --r-lg:30px; --r-pill:999px;
+    --display:"Baloo 2","Nunito",sans-serif; --body:"Nunito",-apple-system,sans-serif; --maxw:760px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--body);background:var(--pink-card);color:var(--navy);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
+  h1,h2,h3{font-family:var(--display);font-weight:800;color:var(--navy);}
+  .accent{color:var(--pink-deep);}
+
+  header{padding:22px 0;}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-family:var(--display);font-weight:800;font-size:19px;color:var(--navy);text-decoration:none;}
+  .back-link{font-size:13px;font-weight:700;color:var(--navy);text-decoration:none;opacity:0.7;}
+  .back-link:hover{opacity:1;}
+
+  .hero-img-wrap{width:100%;aspect-ratio:1/1;max-height:420px;border-radius:var(--r-lg);overflow:hidden;background:var(--pink);margin-bottom:28px;}
+  .hero-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+  .hero-img-wrap.placeholder{display:flex;align-items:center;justify-content:center;color:var(--navy);opacity:0.3;font-size:14px;}
+
+  .event-meta{font-size:13.5px;font-weight:800;color:var(--navy-soft);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;}
+  h1.event-title{font-size:32px;line-height:1.2;margin-bottom:18px;}
+  @media (max-width:600px){h1.event-title{font-size:26px;}}
+  .event-desc{font-size:16px;line-height:1.7;opacity:0.9;margin-bottom:40px;white-space:pre-wrap;}
+
+  .reg-card{background:var(--white);border-radius:var(--r-lg);padding:36px;box-shadow:0 20px 50px -28px rgba(20,63,100,0.35);margin-bottom:60px;}
+  .reg-card h2{font-size:20px;margin-bottom:6px;}
+  .reg-card .reg-sub{font-size:13.5px;opacity:0.7;margin-bottom:24px;}
+  .form-field{margin-bottom:16px;}
+  .form-field label{display:block;font-size:12.5px;font-weight:800;color:var(--navy);margin-bottom:6px;letter-spacing:0.01em;}
+  .form-field input[type="text"],.form-field input[type="email"]{
+    width:100%;border:1.5px solid rgba(20,63,100,0.22);border-radius:12px;padding:12px 14px;
+    font-family:var(--body);font-size:14.5px;color:var(--navy);background:var(--white);
+  }
+  .form-field input:focus{outline:none;border-color:var(--navy);}
+  .form-check{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5;margin-bottom:14px;cursor:pointer;}
+  .form-check input{margin-top:3px;flex-shrink:0;}
+  .form-check a{color:var(--navy);font-weight:700;}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    font-family:var(--body);font-weight:800;font-size:14.5px;padding:15px;border-radius:var(--r-pill);
+    border:none;cursor:pointer;background:var(--navy);color:var(--white);transition:opacity .2s ease;margin-top:6px;
+  }
+  .btn:hover{opacity:0.9;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .form-note{display:none;margin-top:16px;padding:14px 16px;background:var(--pink-card);border-radius:12px;font-size:13.5px;color:var(--navy);}
+  .form-note.show{display:block;}
+  .form-error{display:none;margin-top:14px;color:#B3324A;font-size:12.5px;}
+
+  .closed-note{background:var(--white);border-radius:var(--r-lg);padding:32px;text-align:center;font-size:15px;opacity:0.8;margin-bottom:60px;}
+  .notfound{max-width:480px;margin:80px auto;text-align:center;}
+  .notfound h1{font-size:22px;margin-bottom:12px;}
+  .notfound a{color:var(--navy);font-weight:800;}
+
+  footer{padding:30px 0 50px;text-align:center;font-size:12px;opacity:0.55;}
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="wrap">
+      <a href="/" class="logo">VRauen</a>
+      <a href="/" class="back-link">← Zur Website</a>
+    </div>
+  </header>
+
+  <main class="wrap" id="eventContent">
+    <div style="text-align:center;padding:80px 0;opacity:0.5;">Lädt…</div>
+  </main>
+
+  <footer>
+    <div class="wrap">© 2026 VRauen · <a href="/?zeige=datenschutz" style="color:var(--navy);">Datenschutz</a></div>
+  </footer>
+
+<script>
+  function escapeHTML(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function fmtDatum(d, z){
+    if(!d) return '';
+    const [y,m,day] = d.split('-');
+    return `${day}.${m}.${y}` + (z ? ' · ' + z.slice(0,5) + ' Uhr' : '');
+  }
+
+  async function loadEvent(){
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const content = document.getElementById('eventContent');
+
+    if (!id){
+      content.innerHTML = notFoundHTML();
+      return;
+    }
+
+    const { data, error } = await sb.from('events').select('*').eq('id', id).single();
+    if (error || !data){
+      content.innerHTML = notFoundHTML();
+      return;
+    }
+
+    document.title = data.name + ' — VRauen';
+    content.innerHTML = eventHTML(data);
+
+    if (data.anmeldung_moeglich){
+      document.getElementById('eventRegForm').addEventListener('submit', (e) => handleSubmit(e, data.id));
+    }
+  }
+
+  function notFoundHTML(){
+    return `
+      <div class="notfound">
+        <h1>Event nicht gefunden</h1>
+        <p style="opacity:0.75;margin-bottom:20px;">Dieses Event existiert nicht mehr oder der Link ist fehlerhaft.</p>
+        <a href="/">Zurück zur Website</a>
+      </div>`;
+  }
+
+  function eventHTML(ev){
+    return `
+      <div class="hero-img-wrap ${ev.bild_url ? '' : 'placeholder'}">
+        ${ev.bild_url ? `<img src="${escapeHTML(ev.bild_url)}" alt="${escapeHTML(ev.name)}">` : 'Kein Bild hinterlegt'}
+      </div>
+      <div class="event-meta">${fmtDatum(ev.datum, ev.zeit)}${ev.ort ? ' · ' + escapeHTML(ev.ort) : ''}</div>
+      <h1 class="event-title">${escapeHTML(ev.name)}</h1>
+      ${ev.beschreibung ? `<p class="event-desc">${escapeHTML(ev.beschreibung)}</p>` : ''}
+
+      ${ev.anmeldung_moeglich ? `
+        <div class="reg-card">
+          <h2>Jetzt anmelden</h2>
+          <p class="reg-sub">Trag dich hier ein — wir freuen uns auf dich.</p>
+          <form id="eventRegForm" novalidate>
+            <div class="form-field"><label for="ev-vorname">Vorname *</label><input type="text" id="ev-vorname" required></div>
+            <div class="form-field"><label for="ev-nachname">Nachname</label><input type="text" id="ev-nachname"></div>
+            <div class="form-field"><label for="ev-unternehmen">Unternehmen</label><input type="text" id="ev-unternehmen"></div>
+            <div class="form-field"><label for="ev-mail">E-Mail *</label><input type="email" id="ev-mail" required></div>
+            <label class="form-check"><input type="checkbox" id="ev-newsletter"><span>Ich möchte den VRauen-Newsletter erhalten.</span></label>
+            <label class="form-check"><input type="checkbox" id="ev-privacy" required><span>Ich habe die <a href="/?zeige=datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Angaben zur Anmeldung einverstanden. *</span></label>
+            <button type="submit" class="btn" id="eventRegBtn">Anmeldung senden</button>
+            <p class="form-note" id="eventRegNote">Danke für deine Anmeldung! Wir freuen uns auf dich.</p>
+            <p class="form-error" id="eventRegError">Es gab ein Problem beim Senden. Vielleicht bist du schon angemeldet? Bei Fragen schreib uns an ${MAIL_TO}.</p>
+          </form>
+        </div>
+      ` : `
+        <div class="closed-note">Die Anmeldung für dieses Event ist derzeit nicht möglich.</div>
+      `}
+    `;
+  }
+
+  async function handleSubmit(e, eventId){
+    e.preventDefault();
+    const vorname = document.getElementById('ev-vorname').value.trim();
+    const nachname = document.getElementById('ev-nachname').value.trim();
+    const unternehmen = document.getElementById('ev-unternehmen').value.trim();
+    const mail = document.getElementById('ev-mail').value.trim();
+    const wantsNewsletter = document.getElementById('ev-newsletter').checked;
+    const privacyChecked = document.getElementById('ev-privacy').checked;
+    const note = document.getElementById('eventRegNote');
+    const errorMsg = document.getElementById('eventRegError');
+    const btn = document.getElementById('eventRegBtn');
+
+    errorMsg.style.display = 'none';
+    if (!vorname || !mail || !privacyChecked){
+      errorMsg.textContent = 'Bitte fülle alle Pflichtfelder aus und bestätige die Datenschutzerklärung.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    try {
+      const { error } = await sb.from('event_registrations').insert({
+        event_id: eventId, vorname, nachname: nachname || null, unternehmen: unternehmen || null, email: mail
+      });
+      if (error) throw error;
+
+      if (wantsNewsletter){
+        try {
+          await sb.from('subscribers').insert({ email: mail, source: 'event-registration' });
+        } catch (err) {
+          console.error('Supabase Fehler (Newsletter):', err);
+        }
+      }
+
+      note.classList.add('show');
+      document.getElementById('eventRegForm').reset();
+    } catch (err) {
+      console.error('Supabase Fehler:', err);
+      errorMsg.textContent = 'Es gab ein Problem beim Senden. Vielleicht bist du schon angemeldet? Bei Fragen schreib uns an ' + MAIL_TO + '.';
+      errorMsg.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  loadEvent();
+</script>
+
+</body>
+</html>
