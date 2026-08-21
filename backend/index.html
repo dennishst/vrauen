@@ -429,13 +429,40 @@
 
     <!-- ---------- EVENTS ---------- -->
     <div class="panel" id="panel-events">
-      <div class="toolbar">
-        <div class="toolbar-actions">
+      <div class="subtabs">
+        <button class="subtab-btn active" data-subtab="ev-events">Events</button>
+        <button class="subtab-btn" data-subtab="ev-teilnehmerinnen">Teilnehmerinnen</button>
+        <button class="subtab-btn" data-subtab="ev-archiv">Archiv</button>
+      </div>
+
+      <!-- EVENTS (aktuell/kommend) -->
+      <div class="subpanel active" id="subpanel-ev-events">
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button class="refresh-btn" onclick="loadEvents()">Aktualisieren</button>
+          </div>
+          <button class="add-btn" onclick="openEventModal()">+ Event erstellen</button>
+        </div>
+        <div id="eventsContent" class="loading">Lädt…</div>
+      </div>
+
+      <!-- TEILNEHMERINNEN -->
+      <div class="subpanel" id="subpanel-ev-teilnehmerinnen">
+        <div class="toolbar">
+          <div></div>
           <button class="refresh-btn" onclick="loadEvents()">Aktualisieren</button>
         </div>
-        <button class="add-btn" onclick="openEventModal()">+ Event erstellen</button>
+        <div id="attendeesOverviewContent" class="loading">Lädt…</div>
       </div>
-      <div id="eventsContent" class="loading">Lädt…</div>
+
+      <!-- ARCHIV -->
+      <div class="subpanel" id="subpanel-ev-archiv">
+        <div class="toolbar">
+          <div></div>
+          <button class="refresh-btn" onclick="loadEvents()">Aktualisieren</button>
+        </div>
+        <div id="archiveContent" class="loading">Lädt…</div>
+      </div>
     </div>
 
     <!-- ---------- INHALTE ---------- -->
@@ -490,15 +517,6 @@
         <button type="submit" class="btn" id="eventSaveBtn">Speichern</button>
       </div>
     </form>
-  </div>
-</div>
-
-<!-- ===== TEILNEHMERINNEN MODAL ===== -->
-<div class="modal-overlay" id="attendeesModalOverlay">
-  <div class="modal-box" style="max-width:600px;">
-    <button class="modal-close" onclick="closeAttendeesModal()" aria-label="Schließen">&times;</button>
-    <h3 id="attendeesModalTitle">Teilnehmerinnen</h3>
-    <div id="attendeesContent" class="loading">Lädt…</div>
   </div>
 </div>
 
@@ -1381,12 +1399,14 @@
      EVENTS
      ============================================================ */
   let pendingEventFile = null;
+  let allEvents = [];
 
   async function loadEvents(){
     const el = document.getElementById('eventsContent');
     el.className = 'loading'; el.textContent = 'Lädt…';
     const { data, error } = await sb.from('events').select('*').order('datum', { ascending: true });
     if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+    allEvents = data;
     renderEvents(data);
   }
 
@@ -1405,17 +1425,8 @@
     });
   }
 
-  function renderEvents(data){
-    const el = document.getElementById('eventsContent');
-    document.getElementById('countEvents').textContent = data.length;
-    if (data.length === 0){
-      el.className = 'empty-state';
-      el.textContent = 'Noch keine Events erstellt.';
-      return;
-    }
-    el.className = '';
-    el.innerHTML = `<div class="event-grid">
-      ${data.map(row => `
+  function eventCardHTML(row){
+    return `
         <div class="event-card">
           <div class="img-wrap ${row.bild_url ? '' : 'placeholder'}">
             ${row.bild_url ? `<img src="${escapeHTML(row.bild_url)}" alt="">` : 'Kein Bild'}
@@ -1424,21 +1435,104 @@
             <h4>${escapeHTML(row.name)}</h4>
             ${row.speakerin ? `<div class="meta" style="font-weight:800;">${escapeHTML(row.speakerin)}${row.thema ? ' · ' + escapeHTML(row.thema) : ''}</div>` : ''}
             <div class="meta">${fmtDatum(row.datum, row.zeit)}${row.ort ? ' · ' + escapeHTML(row.ort) : ''}</div>
-            <div class="desc">${escapeHTML(row.beschreibung || '')}</div>
             <span class="badge ${row.anmeldung_moeglich ? 'bestaetigt' : 'abgemeldet'}">${row.anmeldung_moeglich ? 'Anmeldung offen' : 'Anmeldung geschlossen'}</span>
           </div>
           <div class="footer">
             <button class="small-btn" onclick='openEventModal(${JSON.stringify(row).replace(/'/g,"&#39;")})'>Bearbeiten</button>
-            <button class="small-btn" onclick="openAttendeesModal('${row.id}', ${JSON.stringify(row.name).replace(/'/g,"&#39;")})">Teilnehmerinnen</button>
             <button class="small-btn danger" onclick="deleteEvent('${row.id}')">Löschen</button>
           </div>
           <div class="footer" style="border-top:1px dashed #ECECEC;margin-top:2px;padding-top:12px;">
             <button class="small-btn" onclick="copyEventLink('${row.id}')">Link kopieren</button>
             <a class="small-btn" style="text-decoration:none;display:inline-flex;align-items:center;" href="https://vrauen.makerport.de/event.html?id=${row.id}" target="_blank" rel="noopener">Landingpage ansehen</a>
           </div>
-        </div>
-      `).join('')}
-    </div>`;
+        </div>`;
+  }
+
+  function renderEvents(data){
+    const today = new Date().toISOString().slice(0,10);
+    const upcoming = data.filter(row => row.datum >= today);
+    const past = data.filter(row => row.datum < today);
+
+    document.getElementById('countEvents').textContent = upcoming.length;
+
+    /* ---- Sub-Tab: Events (aktuell/kommend) ---- */
+    const el = document.getElementById('eventsContent');
+    if (upcoming.length === 0){
+      el.className = 'empty-state';
+      el.textContent = 'Keine aktuellen oder kommenden Events.';
+    } else {
+      el.className = '';
+      el.innerHTML = `<div class="event-grid">${upcoming.map(eventCardHTML).join('')}</div>`;
+    }
+
+    /* ---- Sub-Tab: Archiv (vergangen) ---- */
+    const archiveEl = document.getElementById('archiveContent');
+    if (past.length === 0){
+      archiveEl.className = 'empty-state';
+      archiveEl.textContent = 'Noch keine vergangenen Events.';
+    } else {
+      archiveEl.className = '';
+      archiveEl.innerHTML = `<div class="event-grid">${past.slice().reverse().map(eventCardHTML).join('')}</div>`;
+    }
+
+    /* ---- Sub-Tab: Teilnehmerinnen ---- */
+    renderAttendeesOverview(data);
+  }
+
+  async function renderAttendeesOverview(events){
+    const el = document.getElementById('attendeesOverviewContent');
+    if (events.length === 0){
+      el.className = 'empty-state';
+      el.textContent = 'Noch keine Events erstellt.';
+      return;
+    }
+    el.className = 'loading';
+    el.textContent = 'Lädt…';
+
+    let regsByEvent = {};
+    if (demoMode){
+      regsByEvent = DEMO_REGISTRATIONS || {};
+    } else {
+      const { data, error } = await sb.from('event_registrations').select('*').order('created_at', { ascending: false });
+      if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+      data.forEach(r => {
+        if (!regsByEvent[r.event_id]) regsByEvent[r.event_id] = [];
+        regsByEvent[r.event_id].push(r);
+      });
+    }
+
+    el.className = '';
+    el.innerHTML = events.map(ev => {
+      const regs = regsByEvent[ev.id] || [];
+      return `
+        <div class="card" style="margin-bottom:18px;">
+          <div style="padding:16px 20px;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h4 style="font-size:15px;">${escapeHTML(ev.name)}</h4>
+              <div class="meta" style="font-size:12.5px;opacity:0.65;">${fmtDatum(ev.datum, ev.zeit)}${ev.ort ? ' · ' + escapeHTML(ev.ort) : ''}</div>
+            </div>
+            <span class="count-pill">${regs.length} Anmeldung${regs.length === 1 ? '' : 'en'}</span>
+          </div>
+          ${regs.length === 0 ? `
+            <div style="padding:18px 20px;font-size:13px;opacity:0.55;">Noch keine Anmeldungen.</div>
+          ` : `
+            <table>
+              <thead><tr><th>Vorname</th><th>Nachname</th><th>Unternehmen</th><th>E-Mail</th><th>Angemeldet am</th></tr></thead>
+              <tbody>
+                ${regs.map(r => `
+                  <tr>
+                    <td>${escapeHTML(r.vorname || '—')}</td>
+                    <td>${escapeHTML(r.nachname || '—')}</td>
+                    <td>${escapeHTML(r.unternehmen || '—')}</td>
+                    <td>${escapeHTML(r.email || '—')}</td>
+                    <td>${fmtDate(r.created_at)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>`;
+    }).join('');
   }
 
   const eventModalOverlay = document.getElementById('eventModalOverlay');
@@ -1571,54 +1665,6 @@
     const { error } = await sb.from('events').delete().eq('id', id);
     if (error){ alert('Fehler beim Löschen: ' + error.message); return; }
     loadEvents();
-  }
-
-  /* ---------- Teilnehmerinnen ---------- */
-  const attendeesModalOverlay = document.getElementById('attendeesModalOverlay');
-  let currentAttendeesEventId = null;
-
-  async function openAttendeesModal(eventId, eventName){
-    currentAttendeesEventId = eventId;
-    document.getElementById('attendeesModalTitle').textContent = 'Teilnehmerinnen — ' + eventName;
-    const el = document.getElementById('attendeesContent');
-    el.className = 'loading'; el.textContent = 'Lädt…';
-    attendeesModalOverlay.classList.add('open');
-
-    if (demoMode){
-      renderAttendees(DEMO_REGISTRATIONS[eventId] || []);
-      return;
-    }
-    const { data, error } = await sb.from('event_registrations').select('*').eq('event_id', eventId).order('created_at', { ascending: false });
-    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
-    renderAttendees(data);
-  }
-  function closeAttendeesModal(){
-    attendeesModalOverlay.classList.remove('open');
-  }
-  attendeesModalOverlay.addEventListener('click', (e) => { if (e.target === attendeesModalOverlay) closeAttendeesModal(); });
-
-  function renderAttendees(data){
-    const el = document.getElementById('attendeesContent');
-    if (data.length === 0){
-      el.className = 'empty-state';
-      el.textContent = 'Noch keine Anmeldungen für dieses Event.';
-      return;
-    }
-    el.className = '';
-    el.innerHTML = `
-      <table>
-        <thead><tr><th>Vorname</th><th>Nachname</th><th>E-Mail</th><th>Angemeldet am</th></tr></thead>
-        <tbody>
-          ${data.map(row => `
-            <tr>
-              <td>${escapeHTML(row.vorname || '—')}</td>
-              <td>${escapeHTML(row.nachname || '—')}</td>
-              <td>${escapeHTML(row.email)}</td>
-              <td>${fmtDate(row.created_at)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>`;
   }
 
   /* ============================================================
