@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
   /* ====== SUPABASE KONFIGURATION ======
      Gleiche Werte wie in index.html eintragen:
@@ -180,6 +181,22 @@
     color:var(--navy);
   }
   .placeholder-col{opacity:0.4;}
+
+  /* ---------- Übersicht ---------- */
+  .ov-section{margin-top:28px;}
+  .ov-heading{font-size:15px;margin-bottom:12px;}
+  .ov-quicklinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;}
+  .ov-qlink{
+    display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid transparent;
+    border-radius:16px;padding:16px 18px;font-family:var(--body);font-weight:700;font-size:13.5px;
+    color:var(--navy);cursor:pointer;box-shadow:0 12px 30px -22px rgba(20,63,100,0.35);text-align:left;
+    transition:border-color .15s ease;
+  }
+  .ov-qlink:hover{border-color:var(--navy);}
+  .ov-qlink-icon{font-size:18px;flex:none;}
+  .ov-next-event-name{font-family:var(--display);font-weight:800;font-size:17px;margin-bottom:4px;}
+  .ov-next-event-meta{font-size:13px;opacity:0.7;margin-bottom:10px;}
+  .ov-next-event-empty{opacity:0.55;font-size:13.5px;}
 
   /* ---------- Modal ---------- */
   .modal-overlay{
@@ -454,14 +471,51 @@
 
   <main>
     <div class="tabs">
-      <button class="tab-btn active" data-tab="newsletter">Newsletter</button>
+      <button class="tab-btn active" data-tab="uebersicht">Übersicht</button>
+      <button class="tab-btn" data-tab="newsletter">Newsletter</button>
       <button class="tab-btn" data-tab="submissions">Einreichungen <span class="count-pill" id="countSubm">0</span></button>
       <button class="tab-btn" data-tab="events">Events <span class="count-pill" id="countEvents">0</span></button>
       <button class="tab-btn" data-tab="content">Inhalte <span class="count-pill" id="countContent">0</span></button>
     </div>
 
+    <!-- ---------- ÜBERSICHT ---------- -->
+    <div class="panel active" id="panel-uebersicht">
+      <div class="stat-cards" id="overviewStats">
+        <div class="stat-card"><div class="num">–</div><div class="lbl">Lädt…</div></div>
+      </div>
+
+      <div class="ov-section">
+        <h3 class="ov-heading">Nächstes Event</h3>
+        <div id="overviewNextEvent" class="card" style="padding:20px;">Lädt…</div>
+      </div>
+
+      <div class="ov-section">
+        <h3 class="ov-heading">Schnellzugriff</h3>
+        <div class="ov-quicklinks">
+          <button class="ov-qlink" onclick="goToTab('events','ev-events'); setTimeout(() => openEventModal(), 50);">
+            <span class="ov-qlink-icon">＋</span> Event erstellen
+          </button>
+          <button class="ov-qlink" onclick="goToTab('newsletter','erstellen'); setTimeout(() => openNewsletterBuilder(), 50);">
+            <span class="ov-qlink-icon">✉️</span> Newsletter erstellen
+          </button>
+          <button class="ov-qlink" onclick="goToTab('events','ev-scannen')">
+            <span class="ov-qlink-icon">▦</span> QR-Scanner öffnen
+          </button>
+          <button class="ov-qlink" onclick="goToTab('submissions')">
+            <span class="ov-qlink-icon">✎</span> Einreichungen ansehen
+          </button>
+          <button class="ov-qlink" onclick="goToTab('events','ev-teilnehmerinnen')">
+            <span class="ov-qlink-icon">◉</span> Teilnehmerinnen verwalten
+          </button>
+          <button class="ov-qlink" onclick="goToTab('content')">
+            <span class="ov-qlink-icon">✏️</span> Inhalte bearbeiten
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ---------- NEWSLETTER (übergeordnet) ---------- -->
-    <div class="panel active" id="panel-newsletter">
+    <div class="panel" id="panel-newsletter">
       <div class="subtabs">
         <button class="subtab-btn active" data-subtab="abonnenten">Abonnenten <span class="count-pill" id="countSubs">0</span></button>
         <button class="subtab-btn" data-subtab="erstellen">Newsletter erstellen <span class="count-pill" id="countNlDrafts">0</span></button>
@@ -520,6 +574,7 @@
         <button class="subtab-btn active" data-subfilter="alle">Alle <span class="count-pill" id="countSubmAlle">0</span></button>
         <button class="subtab-btn" data-subfilter="thema">Thema <span class="count-pill" id="countSubmThema">0</span></button>
         <button class="subtab-btn" data-subfilter="kontakt">Kontakt <span class="count-pill" id="countSubmKontakt">0</span></button>
+        <button class="subtab-btn" data-subfilter="vorschlag">Netzwerk <span class="count-pill" id="countSubmNetzwerk">0</span></button>
       </div>
       <div class="toolbar">
         <div></div>
@@ -852,6 +907,7 @@
     dashboard.style.display = 'block';
     whoLabel.textContent = email;
     currentUserEmail = email;
+    loadOverview();
     loadSubscribers();
     loadSubmissions();
     loadNewsletters();
@@ -911,6 +967,12 @@
     renderNewsletterLists();
     renderEvents(DEMO_EVENTS);
     renderContent(DEMO_CONTENT);
+    renderOverview({
+      confirmedSubs: DEMO_SUBSCRIBERS.filter(s => s.status === 'bestaetigt').length,
+      unreadSubm: DEMO_SUBMISSIONS.filter(s => !s.read).length,
+      upcomingEvents: DEMO_EVENTS,
+      nextEventRegs: (DEMO_REGISTRATIONS[DEMO_EVENTS[0] ? DEMO_EVENTS[0].id : ''] || []).filter(r => !r.storniert).length
+    });
   });
 
   loginForm.addEventListener('submit', async (e) => {
@@ -943,6 +1005,19 @@
       document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
     });
   });
+
+  /* Für Schnellzugriff-Buttons in der Übersicht: simuliert Klicks auf
+     die vorhandenen Haupt-/Unter-Reiter, statt Logik zu duplizieren. */
+  function goToTab(tab, subtab){
+    const tabBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+    if (tabBtn) tabBtn.click();
+    if (subtab){
+      setTimeout(() => {
+        const subBtn = document.querySelector(`.subtab-btn[data-subtab="${subtab}"]`);
+        if (subBtn) subBtn.click();
+      }, 0);
+    }
+  }
 
   /* ---------- Sub-Tabs (innerhalb Newsletter) ---------- */
   document.querySelectorAll('.subtab-btn[data-subtab]').forEach(btn => {
@@ -986,6 +1061,71 @@
   /* ============================================================
      NEWSLETTERANMELDUNGEN (subscribers)
      ============================================================ */
+  /* ============================================================
+     ÜBERSICHT
+     ============================================================ */
+  async function loadOverview(){
+    if (demoMode) return; // wird direkt beim Demo-Login gerendert
+
+    const today = new Date().toISOString().slice(0,10);
+
+    const [subsRes, submRes, eventsRes] = await Promise.all([
+      sb.from('subscribers').select('*', { count: 'exact', head: true }).eq('status', 'bestaetigt'),
+      sb.from('form_submissions').select('*', { count: 'exact', head: true }).eq('read', false),
+      sb.from('events').select('*').gte('datum', today).order('datum', { ascending: true })
+    ]);
+
+    const upcomingEvents = eventsRes.data || [];
+    let nextEventRegs = 0;
+    if (upcomingEvents.length > 0){
+      const { count } = await sb.from('event_registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', upcomingEvents[0].id)
+        .eq('storniert', false);
+      nextEventRegs = count || 0;
+    }
+
+    renderOverview({
+      confirmedSubs: subsRes.count || 0,
+      unreadSubm: submRes.count || 0,
+      upcomingEvents,
+      nextEventRegs
+    });
+  }
+
+  function renderOverview({ confirmedSubs, unreadSubm, upcomingEvents, nextEventRegs }){
+    document.getElementById('overviewStats').innerHTML = `
+      <div class="stat-card">
+        <div class="num">${confirmedSubs}</div>
+        <div class="lbl">Bestätigte Abonnentinnen</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">${unreadSubm}</div>
+        <div class="lbl">Ungelesene Einreichungen</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">${upcomingEvents.length}</div>
+        <div class="lbl">Kommende Events</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">${nextEventRegs}</div>
+        <div class="lbl">Anmeldungen — nächstes Event</div>
+      </div>
+    `;
+
+    const nextEventEl = document.getElementById('overviewNextEvent');
+    if (upcomingEvents.length === 0){
+      nextEventEl.innerHTML = `<div class="ov-next-event-empty">Kein kommendes Event geplant.</div>`;
+      return;
+    }
+    const ev = upcomingEvents[0];
+    nextEventEl.innerHTML = `
+      <div class="ov-next-event-name">${escapeHTML(ev.name)}</div>
+      <div class="ov-next-event-meta">${fmtDatum(ev.datum, ev.zeit)}${ev.ort ? ' · ' + escapeHTML(ev.ort) : ''}</div>
+      <button class="small-btn" onclick="goToTab('events','ev-teilnehmerinnen')">Teilnehmerinnen ansehen</button>
+    `;
+  }
+
   async function loadSubscribers(){
     const el = document.getElementById('subscribersContent');
     el.className = 'loading'; el.textContent = 'Lädt…';
@@ -1399,6 +1539,7 @@
     document.getElementById('countSubmAlle').textContent = data.length;
     document.getElementById('countSubmThema').textContent = data.filter(s => s.type === 'thema').length;
     document.getElementById('countSubmKontakt').textContent = data.filter(s => s.type === 'kontakt').length;
+    document.getElementById('countSubmNetzwerk').textContent = data.filter(s => s.type === 'vorschlag').length;
 
     const filtered = currentSubmissionFilter === 'alle' ? data : data.filter(s => s.type === currentSubmissionFilter);
 
@@ -1667,7 +1808,11 @@
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
               <span class="count-pill">${activeRegs.length} Anmeldung${activeRegs.length === 1 ? '' : 'en'}</span>
               <span class="count-pill" style="background:#DFF3E4;color:#1F6B36;">${checkedInCount} eingecheckt</span>
-              <button class="small-btn" onclick='openAddAttendeeModal(${JSON.stringify(ev.id)}, ${JSON.stringify(ev.name)})'>+ Teilnehmerin</button>
+              <button class="small-btn" onclick='openAddAttendeeModal(${JSON.stringify(ev.id)}, ${JSON.stringify(ev.name).replace(/'/g,"&#39;")})'>+ Teilnehmerin</button>
+              ${regs.length > 0 ? `
+                <button class="small-btn" onclick='exportAttendeesCSV(${JSON.stringify(ev.name).replace(/'/g,"&#39;")}, ${JSON.stringify(regs).replace(/'/g,"&#39;")})'>CSV</button>
+                <button class="small-btn" onclick='exportAttendeesXLSX(${JSON.stringify(ev.name).replace(/'/g,"&#39;")}, ${JSON.stringify(regs).replace(/'/g,"&#39;")})'>Excel</button>
+              ` : ''}
             </div>
           </div>
           ${regs.length === 0 ? `
@@ -1683,7 +1828,9 @@
                     <td>${escapeHTML(r.unternehmen || '—')}</td>
                     <td>${escapeHTML(r.email || '—')}</td>
                     <td>${fmtDate(r.created_at)}</td>
-                    <td>${r.checked_in ? `<span class="badge bestaetigt">✓ ${fmtDate(r.checked_in_at)}</span>` : `<span class="badge abgemeldet">–</span>`}</td>
+                    <td>${r.checked_in
+                      ? `<span class="badge bestaetigt">✓ ${fmtDate(r.checked_in_at)}</span> <button class="small-btn" style="margin-top:4px;" onclick="toggleCheckin('${r.id}', false)">Zurücksetzen</button>`
+                      : `<button class="small-btn" onclick="toggleCheckin('${r.id}', true)">Einchecken</button>`}</td>
                     <td>${r.storniert ? `<span class="badge abgemeldet">Abgemeldet</span>` : `<span class="badge bestaetigt">Aktiv</span>`}</td>
                     <td>
                       <div class="row-actions">
@@ -1752,6 +1899,63 @@
     closeAddAttendeeModal();
     renderAttendeesOverview(allEvents);
   });
+
+  function attendeesExportRows(regs){
+    return regs.map(r => ({
+      Vorname: r.vorname || '',
+      Nachname: r.nachname || '',
+      Unternehmen: r.unternehmen || '',
+      'E-Mail': r.email || '',
+      'Angemeldet am': fmtDate(r.created_at),
+      'Check-in': r.checked_in ? 'Ja (' + fmtDate(r.checked_in_at) + ')' : 'Nein',
+      Status: r.storniert ? 'Abgemeldet' : 'Aktiv'
+    }));
+  }
+
+  function sanitizeFilename(name){
+    return name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '');
+  }
+
+  function exportAttendeesCSV(eventName, regs){
+    const rows = attendeesExportRows(regs);
+    const headers = Object.keys(rows[0]);
+    const escapeCsv = (val) => {
+      const s = String(val ?? '');
+      return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const csv = [headers.join(';'), ...rows.map(row => headers.map(h => escapeCsv(row[h])).join(';'))].join('\r\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Teilnehmerinnen-${sanitizeFilename(eventName)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function exportAttendeesXLSX(eventName, regs){
+    const rows = attendeesExportRows(regs);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:16},{wch:16},{wch:22},{wch:28},{wch:16},{wch:20},{wch:12}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Teilnehmerinnen');
+    XLSX.writeFile(wb, `Teilnehmerinnen-${sanitizeFilename(eventName)}.xlsx`);
+  }
+
+  async function toggleCheckin(id, newValue){
+    if (demoMode){
+      Object.values(DEMO_REGISTRATIONS).forEach(list => {
+        const item = list.find(r => r.id === id);
+        if (item){ item.checked_in = newValue; item.checked_in_at = newValue ? new Date().toISOString() : null; }
+      });
+      renderAttendeesOverview(allEvents);
+      return;
+    }
+    const { error } = await sb.from('event_registrations')
+      .update({ checked_in: newValue, checked_in_at: newValue ? new Date().toISOString() : null })
+      .eq('id', id);
+    if (error){ alert('Fehler: ' + error.message); return; }
+    renderAttendeesOverview(allEvents);
+  }
 
   async function toggleStorniert(id, newValue){
     if (demoMode){
