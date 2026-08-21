@@ -1309,6 +1309,13 @@
     }
   }
   applySiteContent();
+
+  /* Öffnet automatisch das Datenschutz-Modal, wenn die Seite mit
+     ?zeige=datenschutz aufgerufen wird (z.B. Link von einer
+     Event-Landingpage aus). */
+  if (new URLSearchParams(window.location.search).get('zeige') === 'datenschutz') {
+    openModal(datenschutzModalHTML());
+  }
 </script>
 
 </body>
