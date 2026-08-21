@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
   /* ====== SUPABASE KONFIGURATION ======
      Gleiche Werte wie in index.html eintragen:
@@ -56,6 +57,30 @@
   .field-check{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:14px;}
   .field-check input{width:auto;}
   .field-hint{font-size:11.5px;opacity:0.6;margin-top:5px;line-height:1.4;}
+
+  /* ---------- Events: Scannen ---------- */
+  .scan-layout{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;}
+  @media (max-width:800px){.scan-layout{grid-template-columns:1fr;}}
+  .scan-video-wrap{
+    position:relative;background:#000;border-radius:var(--r-lg);overflow:hidden;aspect-ratio:4/3;
+  }
+  .scan-video-wrap video{width:100%;height:100%;object-fit:cover;display:block;}
+  .scan-overlay{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:rgba(255,255,255,0.7);font-size:13px;font-family:var(--body);text-align:center;padding:20px;
+  }
+  .scan-side{display:flex;flex-direction:column;gap:14px;}
+  .scan-result{
+    min-height:70px;border-radius:14px;padding:14px 16px;font-size:13.5px;line-height:1.5;
+    background:var(--pink-card);color:var(--navy);
+  }
+  .scan-result.ok{background:#DFF3E4;color:#1F6B36;}
+  .scan-result.warn{background:#FFF3D6;color:#8A6300;}
+  .scan-result.err{background:#FBE1E6;color:#B3324A;}
+  .scan-result b{display:block;font-size:15px;margin-bottom:2px;}
+  .scan-log-label{font-size:11px;font-weight:800;text-transform:uppercase;opacity:0.5;margin-top:4px;}
+  .scan-log{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;}
+  .scan-log-item{font-size:12.5px;padding:8px 10px;background:var(--white);border:1px solid #ECECEC;border-radius:10px;}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
     font-family:var(--body);font-weight:800;font-size:14.5px;padding:14px;border-radius:999px;
@@ -432,6 +457,7 @@
       <div class="subtabs">
         <button class="subtab-btn active" data-subtab="ev-events">Events</button>
         <button class="subtab-btn" data-subtab="ev-teilnehmerinnen">Teilnehmerinnen</button>
+        <button class="subtab-btn" data-subtab="ev-scannen">Scannen</button>
         <button class="subtab-btn" data-subtab="ev-archiv">Archiv</button>
       </div>
 
@@ -453,6 +479,26 @@
           <button class="refresh-btn" onclick="loadEvents()">Aktualisieren</button>
         </div>
         <div id="attendeesOverviewContent" class="loading">Lädt…</div>
+      </div>
+
+      <!-- SCANNEN -->
+      <div class="subpanel" id="subpanel-ev-scannen">
+        <div class="note-box">
+          Kamera auf den QR-Code aus der Bestätigungsmail richten. Bei Erkennung wird die Teilnehmerin automatisch als eingecheckt markiert.
+        </div>
+        <div class="scan-layout">
+          <div class="scan-video-wrap">
+            <video id="scanVideo" playsinline muted></video>
+            <canvas id="scanCanvas" style="display:none;"></canvas>
+            <div id="scanOverlay" class="scan-overlay"></div>
+          </div>
+          <div class="scan-side">
+            <button class="btn" id="scanToggleBtn" onclick="toggleScanner()">Scanner starten</button>
+            <div id="scanResult" class="scan-result"></div>
+            <div class="scan-log-label">Zuletzt eingecheckt</div>
+            <div id="scanLog" class="scan-log"></div>
+          </div>
+        </div>
       </div>
 
       <!-- ARCHIV -->
@@ -807,6 +853,13 @@
       document.querySelectorAll('.subpanel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
+
+      // Kamera abschalten, sobald der Scannen-Reiter verlassen wird
+      if (btn.dataset.subtab !== 'ev-scannen' && typeof scanActive !== 'undefined' && scanActive){
+        stopScanner();
+        const scanBtn = document.getElementById('scanToggleBtn');
+        if (scanBtn) scanBtn.textContent = 'Scanner starten';
+      }
     });
   });
 
@@ -1504,6 +1557,7 @@
     el.className = '';
     el.innerHTML = events.map(ev => {
       const regs = regsByEvent[ev.id] || [];
+      const checkedInCount = regs.filter(r => r.checked_in).length;
       return `
         <div class="card" style="margin-bottom:18px;">
           <div style="padding:16px 20px;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -1511,13 +1565,16 @@
               <h4 style="font-size:15px;">${escapeHTML(ev.name)}</h4>
               <div class="meta" style="font-size:12.5px;opacity:0.65;">${fmtDatum(ev.datum, ev.zeit)}${ev.ort ? ' · ' + escapeHTML(ev.ort) : ''}</div>
             </div>
-            <span class="count-pill">${regs.length} Anmeldung${regs.length === 1 ? '' : 'en'}</span>
+            <div style="display:flex;gap:8px;">
+              <span class="count-pill">${regs.length} Anmeldung${regs.length === 1 ? '' : 'en'}</span>
+              <span class="count-pill" style="background:#DFF3E4;color:#1F6B36;">${checkedInCount} eingecheckt</span>
+            </div>
           </div>
           ${regs.length === 0 ? `
             <div style="padding:18px 20px;font-size:13px;opacity:0.55;">Noch keine Anmeldungen.</div>
           ` : `
             <table>
-              <thead><tr><th>Vorname</th><th>Nachname</th><th>Unternehmen</th><th>E-Mail</th><th>Angemeldet am</th></tr></thead>
+              <thead><tr><th>Vorname</th><th>Nachname</th><th>Unternehmen</th><th>E-Mail</th><th>Angemeldet am</th><th>Check-in</th></tr></thead>
               <tbody>
                 ${regs.map(r => `
                   <tr>
@@ -1526,6 +1583,7 @@
                     <td>${escapeHTML(r.unternehmen || '—')}</td>
                     <td>${escapeHTML(r.email || '—')}</td>
                     <td>${fmtDate(r.created_at)}</td>
+                    <td>${r.checked_in ? `<span class="badge bestaetigt">✓ ${fmtDate(r.checked_in_at)}</span>` : `<span class="badge abgemeldet">–</span>`}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1534,6 +1592,130 @@
         </div>`;
     }).join('');
   }
+
+  /* ---------- Scannen (QR-Code-Check-in) ---------- */
+  let scanStream = null;
+  let scanActive = false;
+  let scanCooldownUntil = 0;
+  let scanLastToken = null;
+  const scanLogEntries = [];
+
+  async function toggleScanner(){
+    const btn = document.getElementById('scanToggleBtn');
+    if (scanActive){
+      stopScanner();
+      btn.textContent = 'Scanner starten';
+      return;
+    }
+    try {
+      const video = document.getElementById('scanVideo');
+      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = scanStream;
+      await video.play();
+      scanActive = true;
+      btn.textContent = 'Scanner stoppen';
+      document.getElementById('scanOverlay').textContent = '';
+      requestAnimationFrame(scanFrame);
+    } catch (err) {
+      document.getElementById('scanOverlay').textContent = 'Kamerazugriff nicht möglich: ' + err.message;
+    }
+  }
+
+  function stopScanner(){
+    scanActive = false;
+    if (scanStream){
+      scanStream.getTracks().forEach(t => t.stop());
+      scanStream = null;
+    }
+    document.getElementById('scanOverlay').textContent = 'Scanner gestoppt';
+  }
+
+  function scanFrame(){
+    if (!scanActive) return;
+    const video = document.getElementById('scanVideo');
+    const canvas = document.getElementById('scanCanvas');
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA){
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+      if (code && code.data && Date.now() > scanCooldownUntil){
+        scanCooldownUntil = Date.now() + 2500; // kurze Pause, damit dieselbe Person nicht doppelt gescannt wird
+        handleScannedToken(code.data.trim());
+      }
+    }
+    requestAnimationFrame(scanFrame);
+  }
+
+  async function handleScannedToken(token){
+    const resultEl = document.getElementById('scanResult');
+    resultEl.className = 'scan-result';
+    resultEl.innerHTML = 'Prüfe…';
+
+    if (demoMode){
+      resultEl.className = 'scan-result warn';
+      resultEl.innerHTML = '<b>Demo-Modus</b>Check-in ist nur mit echten Daten möglich.';
+      return;
+    }
+
+    const { data: reg, error } = await sb
+      .from('event_registrations')
+      .select('*, events(name)')
+      .eq('checkin_token', token)
+      .maybeSingle();
+
+    if (error || !reg){
+      resultEl.className = 'scan-result err';
+      resultEl.innerHTML = '<b>QR-Code nicht erkannt</b>Diese Anmeldung existiert nicht.';
+      return;
+    }
+
+    const name = [reg.vorname, reg.nachname].filter(Boolean).join(' ') || reg.email;
+    const eventName = reg.events ? reg.events.name : '';
+
+    if (reg.checked_in){
+      resultEl.className = 'scan-result warn';
+      resultEl.innerHTML = `<b>${escapeHTML(name)}</b>Bereits eingecheckt um ${fmtDate(reg.checked_in_at)} · ${escapeHTML(eventName)}`;
+      return;
+    }
+
+    const { error: updateError } = await sb
+      .from('event_registrations')
+      .update({ checked_in: true, checked_in_at: new Date().toISOString() })
+      .eq('id', reg.id);
+
+    if (updateError){
+      resultEl.className = 'scan-result err';
+      resultEl.innerHTML = '<b>Fehler beim Einchecken</b>' + updateError.message;
+      return;
+    }
+
+    resultEl.className = 'scan-result ok';
+    resultEl.innerHTML = `<b>✓ ${escapeHTML(name)}</b>Eingecheckt · ${escapeHTML(eventName)}`;
+
+    scanLogEntries.unshift({ name, eventName, time: new Date() });
+    renderScanLog();
+    renderEvents(allEvents); // Zähler in Teilnehmerinnen-Ansicht aktualisieren
+  }
+
+  function renderScanLog(){
+    const el = document.getElementById('scanLog');
+    if (scanLogEntries.length === 0){
+      el.innerHTML = '<div style="font-size:12px;opacity:0.5;">Noch keine Scans in dieser Sitzung.</div>';
+      return;
+    }
+    el.innerHTML = scanLogEntries.slice(0, 15).map(e => `
+      <div class="scan-log-item">
+        <b>${escapeHTML(e.name)}</b> · ${escapeHTML(e.eventName)}<br>
+        <span style="opacity:0.55;">${e.time.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+      </div>
+    `).join('');
+  }
+  renderScanLog();
 
   const eventModalOverlay = document.getElementById('eventModalOverlay');
   const eventForm = document.getElementById('eventForm');
