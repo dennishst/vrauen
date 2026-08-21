@@ -93,6 +93,8 @@
   .btn-white:hover{box-shadow:0 10px 24px -10px rgba(0,0,0,0.25);}
   .btn-outline-navy{border-color:var(--navy);color:var(--navy);background:transparent;}
   .btn-outline-navy:hover{background:var(--navy);color:var(--white);}
+  .btn-outline-white{border-color:rgba(255,255,255,0.6);color:var(--white);background:transparent;}
+  .btn-outline-white:hover{background:var(--white);color:var(--navy);}
   .btn-sm{padding:12px 22px;font-size:13px;}
 
   /* -------- Header -------- */
@@ -164,6 +166,7 @@
   .hero-card p{margin-top:18px;font-size:15px;color:rgba(255,255,255,0.92);max-width:440px;}
   .hero-card p b{color:var(--white);}
   .hero-card .btn{margin-top:24px;}
+  .hero-btn-row{display:flex;gap:12px;flex-wrap:wrap;}
   .hero-tags{
     display:grid;grid-template-columns:1fr 1fr;gap:12px;
   }
@@ -252,6 +255,25 @@
   .t-card p b{font-weight:800;opacity:1;}
   .t-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;font-size:13px;font-weight:700;color:var(--navy);}
   .t-meta span{display:inline-flex;align-items:center;gap:6px;}
+
+  /* Nächstes Event -- blau hinterlegte Karte statt Standard-Rosa */
+  .t-card.next-event{
+    background:var(--navy);color:var(--white);
+    position:relative;
+  }
+  .t-card.next-event .next-badge{
+    display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;
+    background:var(--pink);color:var(--navy);padding:4px 12px;border-radius:var(--r-pill);margin-bottom:10px;
+  }
+  .t-card.next-event h3{color:var(--white);}
+  .t-card.next-event p{color:rgba(255,255,255,0.9);opacity:1;}
+  .t-card.next-event p b{color:var(--white);}
+  .t-card.next-event .t-meta{color:var(--white);}
+  .t-card.next-event a.t-cta{
+    display:inline-block;margin-top:14px;font-size:13px;font-weight:800;color:var(--white);
+    text-decoration:underline;text-underline-offset:3px;
+  }
+  #nextEventTimelineSlot .t-connector .dot{background:var(--navy);color:var(--white);}
 
   /* -------- TESTIMONIALS -------- */
   .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;}
@@ -529,6 +551,7 @@
       <a href="#werte">Werte</a>
       <a href="#speakerinnen">Speakerinnen</a>
       <a href="#team">Team</a>
+      <a href="/events.html">Events</a>
     </div>
     <a href="#mitmachen" class="btn btn-pink">Mitmachen</a>
     <button class="burger" id="burgerBtn" aria-label="Menü öffnen">
@@ -543,6 +566,7 @@
   <a href="#werte">Werte</a>
   <a href="#speakerinnen">Speakerinnen</a>
   <a href="#team">Team</a>
+  <a href="/events.html">Events</a>
   <a href="#mitmachen">Mitmachen</a>
 </div>
 
@@ -558,7 +582,10 @@
         <div class="hero-card reveal">
           <h1 data-cms="hero_headline">Kein Ellbogen. Kein Konkurrenzdenken.<br><span class="accent">Nur echte Verbindung.</span></h1>
           <p data-cms="hero_subtext"><b>VRauen</b> bringt Frauen aus Wirtschaft, Verwaltung, Bildung und Zivilgesellschaft zusammen. Hierarchiefrei, kostenlos und zweimal im Jahr.</p>
-          <a href="#mitmachen" class="btn btn-white">Mitmachen</a>
+          <div class="hero-btn-row">
+            <a href="#mitmachen" class="btn btn-white">Mitmachen</a>
+            <a href="/events.html" id="nextEventBtn" class="btn btn-outline-white">Nächstes Treffen</a>
+          </div>
         </div>
         <div class="hero-tags reveal">
           <span class="tag">2× jährlich</span>
@@ -687,13 +714,14 @@
           </div>
         </div>
         <div class="t-item">
-          <div class="t-connector"><div class="dot">6</div></div>
+          <div class="t-connector"><div class="dot">6</div><div class="line"></div></div>
           <div class="t-card">
             <h3>Judith Dada</h3>
             <p><b>KI-Investorin</b>, wie Künstliche Intelligenz die Welt verändert und was du jetzt tun kannst.</p>
             <div class="t-meta"><span>📍 Strandhaus Altefähr</span><span>🗓️ 24.02.2026</span></div>
           </div>
         </div>
+        <div id="nextEventTimelineSlot"></div>
       </div>
     </div>
   </section>
@@ -1309,6 +1337,64 @@
     }
   }
   applySiteContent();
+
+  function escapeHTML(str){
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  /* Nächstes Treffen -- Hero-Button mit dem nächsten kommenden Event verlinken
+     und am Ende der Speakerinnen/Rückblick-Timeline als blaue Karte anzeigen */
+  async function loadNextEvent(){
+    try {
+      const today = new Date().toISOString().slice(0,10);
+      const { data, error } = await sb
+        .from('events')
+        .select('*')
+        .gte('datum', today)
+        .order('datum', { ascending: true })
+        .limit(1);
+
+      const heroBtn = document.getElementById('nextEventBtn');
+      const timelineSlot = document.getElementById('nextEventTimelineSlot');
+
+      if (error || !data || data.length === 0){
+        if (heroBtn) heroBtn.href = '/events.html';
+        return;
+      }
+
+      const ev = data[0];
+      const [y,m,d] = ev.datum.split('-');
+      const datumFormatted = `${d}.${m}.${y}`;
+
+      if (heroBtn){
+        heroBtn.href = `/event.html?id=${ev.id}`;
+        heroBtn.textContent = `Nächstes Treffen · ${d}.${m}.`;
+      }
+
+      if (timelineSlot){
+        const titel = ev.speakerin || ev.name;
+        const untertitel = ev.thema || ev.name;
+        timelineSlot.outerHTML = `
+          <div class="t-item">
+            <div class="t-connector"><div class="dot">→</div></div>
+            <div class="t-card next-event">
+              <span class="next-badge">Nächstes Treffen</span>
+              <h3>${escapeHTML(titel)}</h3>
+              <p><b>${escapeHTML(untertitel)}</b></p>
+              <div class="t-meta">
+                ${ev.ort ? `<span>📍 ${escapeHTML(ev.ort)}</span>` : ''}
+                <span>🗓️ ${datumFormatted}${ev.zeit ? ' · ' + ev.zeit.slice(0,5) + ' Uhr' : ''}</span>
+              </div>
+              <a class="t-cta" href="/event.html?id=${ev.id}">Jetzt anmelden →</a>
+            </div>
+          </div>`;
+      }
+    } catch (err) {
+      console.error('Konnte nächstes Event nicht laden:', err);
+    }
+  }
+  loadNextEvent();
 
   /* Öffnet automatisch das Datenschutz-Modal, wenn die Seite mit
      ?zeige=datenschutz aufgerufen wird (z.B. Link von einer
