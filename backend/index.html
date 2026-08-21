@@ -366,6 +366,11 @@
 
       <!-- ABONNENTEN -->
       <div class="subpanel active" id="subpanel-abonnenten">
+        <div class="subtabs">
+          <button class="subtab-btn active" data-subfilter-sub="alle">Alle <span class="count-pill" id="countSubFilterAlle">0</span></button>
+          <button class="subtab-btn" data-subfilter-sub="bestaetigt">Angemeldet <span class="count-pill" id="countSubFilterAngemeldet">0</span></button>
+          <button class="subtab-btn" data-subfilter-sub="abgemeldet">Abgemeldet <span class="count-pill" id="countSubFilterAbgemeldet">0</span></button>
+        </div>
         <div class="note-box">
           „Erhaltene Newsletter" und „Öffnungsrate" werden sichtbar, sobald der automatische Versand eingerichtet ist. Bis dahin kannst du alle bestätigten Adressen als CSV exportieren.
         </div>
@@ -411,7 +416,6 @@
         <button class="subtab-btn active" data-subfilter="alle">Alle <span class="count-pill" id="countSubmAlle">0</span></button>
         <button class="subtab-btn" data-subfilter="thema">Thema <span class="count-pill" id="countSubmThema">0</span></button>
         <button class="subtab-btn" data-subfilter="kontakt">Kontakt <span class="count-pill" id="countSubmKontakt">0</span></button>
-        <button class="subtab-btn" data-subfilter="vorschlag">Vorschlag <span class="count-pill" id="countSubmVorschlag">0</span></button>
       </div>
       <div class="toolbar">
         <div></div>
@@ -791,6 +795,17 @@
     });
   });
 
+  /* ---------- Filter-Reiter (innerhalb Abonnenten) ---------- */
+  let currentSubscriberFilter = 'alle';
+  document.querySelectorAll('.subtab-btn[data-subfilter-sub]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.subtab-btn[data-subfilter-sub]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSubscriberFilter = btn.dataset.subfilterSub;
+      renderSubscribers(currentSubscribers);
+    });
+  });
+
   /* ============================================================
      NEWSLETTERANMELDUNGEN (subscribers)
      ============================================================ */
@@ -808,9 +823,15 @@
     currentSubscribers = data;
     const el = document.getElementById('subscribersContent');
     document.getElementById('countSubs').textContent = data.length;
-    if (data.length === 0){
+    document.getElementById('countSubFilterAlle').textContent = data.length;
+    document.getElementById('countSubFilterAngemeldet').textContent = data.filter(s => s.status === 'bestaetigt').length;
+    document.getElementById('countSubFilterAbgemeldet').textContent = data.filter(s => s.status === 'abgemeldet').length;
+
+    const filtered = currentSubscriberFilter === 'alle' ? data : data.filter(s => s.status === currentSubscriberFilter);
+
+    if (filtered.length === 0){
       el.className = 'empty-state';
-      el.textContent = 'Noch keine Anmeldungen.';
+      el.textContent = 'Keine Anmeldungen in dieser Ansicht.';
       return;
     }
     el.className = '';
@@ -821,7 +842,7 @@
           <th class="placeholder-col">Öffnungsrate</th><th>Angemeldet am</th>
         </tr></thead>
         <tbody>
-          ${data.map(row => `
+          ${filtered.map(row => `
             <tr>
               <td>${escapeHTML(row.email)}</td>
               <td><span class="badge ${row.status}">${row.status}</span></td>
@@ -1201,7 +1222,6 @@
     document.getElementById('countSubmAlle').textContent = data.length;
     document.getElementById('countSubmThema').textContent = data.filter(s => s.type === 'thema').length;
     document.getElementById('countSubmKontakt').textContent = data.filter(s => s.type === 'kontakt').length;
-    document.getElementById('countSubmVorschlag').textContent = data.filter(s => s.type === 'vorschlag').length;
 
     const filtered = currentSubmissionFilter === 'alle' ? data : data.filter(s => s.type === currentSubmissionFilter);
 
