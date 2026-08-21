@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script>
   const SUPABASE_URL = 'https://zdndcmxxcxvjloftohhg.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_jqU_8wVSce7-uBO1s5oETA__xf2Z0R_';
@@ -68,6 +69,14 @@
   .form-note.show{display:block;}
   .form-note img{display:block;margin:14px auto 0;width:180px;height:180px;border-radius:12px;background:var(--white);padding:8px;}
   .form-note .qr-hint{text-align:center;font-size:12px;opacity:0.7;margin-top:8px;}
+  .qr-download-row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+  .qr-download-row button{
+    font-family:var(--body);font-size:12.5px;font-weight:800;color:var(--navy);
+    background:var(--white);border:1.5px solid rgba(20,63,100,0.25);border-radius:var(--r-pill);
+    padding:9px 16px;cursor:pointer;
+  }
+  .qr-download-row button:hover{border-color:var(--navy);}
+  .qr-download-row button:disabled{opacity:0.5;cursor:not-allowed;}
   .form-error{display:none;margin-top:14px;color:#B3324A;font-size:12.5px;}
 
   .closed-note{background:var(--white);border-radius:var(--r-lg);padding:32px;text-align:center;font-size:15px;opacity:0.8;margin-bottom:60px;}
@@ -166,7 +175,7 @@
             <label class="form-check"><input type="checkbox" id="ev-privacy" required><span>Ich habe die <a href="/?zeige=datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a> gelesen und bin mit der Verarbeitung meiner Angaben zur Anmeldung einverstanden. *</span></label>
             <button type="submit" class="btn" id="eventRegBtn">Anmeldung senden</button>
             <p class="form-note" id="eventRegNote">Danke für deine Anmeldung! Wir freuen uns auf dich.</p>
-            <p class="form-error" id="eventRegError">Es gab ein Problem beim Senden. Vielleicht bist du schon angemeldet? Bei Fragen schreib uns an ${MAIL_TO}.</p>
+            <p class="form-error" id="eventRegError">Es gab ein Problem beim Senden. Bei Fragen schreib uns an ${MAIL_TO}.</p>
           </form>
         </div>
       ` : `
@@ -195,6 +204,53 @@
       await new Promise(r => setTimeout(r, 50));
     }
     if (typeof QRCode === 'undefined') throw new Error('QRCode-Bibliothek konnte nicht geladen werden.');
+  }
+
+  async function downloadTicketPDF({ eventName, eventDatum, eventZeit, eventOrt, vorname, qrDataUrl }){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Kopfbereich
+    doc.setFillColor(20, 63, 100);
+    doc.rect(0, 0, pageWidth, 38, 'F');
+    doc.setTextColor(249, 203, 221);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.text('VRauen', pageWidth / 2, 20, { align: 'center' });
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('EVENT-TICKET', pageWidth / 2, 28, { align: 'center' });
+
+    // Event-Infos
+    doc.setTextColor(20, 63, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text(eventName, pageWidth / 2, 55, { align: 'center', maxWidth: pageWidth - 40 });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    let infoLine = eventDatum + (eventZeit ? ' · ' + eventZeit + ' Uhr' : '');
+    doc.text(infoLine, pageWidth / 2, 65, { align: 'center' });
+    if (eventOrt){
+      doc.text(eventOrt, pageWidth / 2, 72, { align: 'center' });
+    }
+    if (vorname){
+      doc.setFontSize(11);
+      doc.setTextColor(90, 90, 90);
+      doc.text('Angemeldet: ' + vorname, pageWidth / 2, 80, { align: 'center' });
+    }
+
+    // QR-Code
+    const qrSize = 80;
+    doc.addImage(qrDataUrl, 'PNG', (pageWidth - qrSize) / 2, 92, qrSize, qrSize);
+
+    doc.setFontSize(10);
+    doc.setTextColor(120, 120, 120);
+    doc.text('Diesen QR-Code beim Einlass vorzeigen.', pageWidth / 2, 182, { align: 'center' });
+
+    doc.save('VRauen-Ticket-' + eventName.replace(/[^a-z0-9]+/gi, '-') + '.pdf');
   }
 
   async function handleSubmit(e, event){
@@ -242,11 +298,44 @@
       try {
         await ensureQRCodeLib();
         const qrDataUrl = await QRCode.toDataURL(reg.checkin_token, { width: 400, margin: 1 });
+        const [y,m,d] = event.datum.split('-');
+        const datumFormatted = `${d}.${m}.${y}`;
 
         const img = document.createElement('img');
         img.src = qrDataUrl;
         img.alt = 'Dein Check-in QR-Code';
         note.appendChild(img);
+
+        const downloadRow = document.createElement('div');
+        downloadRow.className = 'qr-download-row';
+        downloadRow.innerHTML = `
+          <button type="button" id="dlImgBtn">Als Bild speichern</button>
+          <button type="button" id="dlPdfBtn">Als PDF speichern</button>
+        `;
+        note.appendChild(downloadRow);
+
+        document.getElementById('dlImgBtn').addEventListener('click', () => {
+          const a = document.createElement('a');
+          a.href = qrDataUrl;
+          a.download = `VRauen-QR-${event.name.replace(/[^a-z0-9]+/gi,'-')}.png`;
+          a.click();
+        });
+
+        document.getElementById('dlPdfBtn').addEventListener('click', async (ev) => {
+          const btn = ev.currentTarget;
+          btn.disabled = true;
+          btn.textContent = 'Erstelle PDF…';
+          try {
+            await downloadTicketPDF({
+              eventName: event.name, eventDatum: datumFormatted,
+              eventZeit: event.zeit ? event.zeit.slice(0,5) : null,
+              eventOrt: event.ort || null, vorname, qrDataUrl
+            });
+          } finally {
+            btn.disabled = false;
+            btn.textContent = 'Als PDF speichern';
+          }
+        });
 
         const blob = await (await fetch(qrDataUrl)).blob();
         const path = `${reg.checkin_token}.png`;
@@ -261,7 +350,6 @@
           await sb.from('event_registrations').update({ qr_url: qrUrl }).eq('id', reg.id);
         }
 
-        const [y,m,d] = event.datum.split('-');
         await fetch(`${SUPABASE_URL}/functions/v1/send-event-confirmation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -269,10 +357,11 @@
             toEmail: mail,
             vorname,
             eventName: event.name,
-            eventDatum: `${d}.${m}.${y}`,
+            eventDatum: datumFormatted,
             eventZeit: event.zeit ? event.zeit.slice(0,5) : null,
             eventOrt: event.ort || null,
             eventUrl: window.location.href.split('?')[0] + '?id=' + eventId,
+            ticketUrl: window.location.origin + '/ticket.html?token=' + reg.checkin_token,
             qrUrl
           })
         });
@@ -281,7 +370,11 @@
       }
     } catch (err) {
       console.error('Supabase Fehler:', err);
-      errorMsg.textContent = 'Es gab ein Problem beim Senden. Vielleicht bist du schon angemeldet? Bei Fragen schreib uns an ' + MAIL_TO + '.';
+      if (err && err.code === '23505'){
+        errorMsg.textContent = 'Diese E-Mail-Adresse ist für dieses Event bereits angemeldet.';
+      } else {
+        errorMsg.textContent = 'Es gab ein Problem beim Senden' + (err && err.message ? ' (' + err.message + ')' : '') + '. Bei Fragen schreib uns an ' + MAIL_TO + '.';
+      }
       errorMsg.style.display = 'block';
     } finally {
       btn.disabled = false;
