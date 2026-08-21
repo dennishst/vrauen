@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
 <script>
   const SUPABASE_URL = 'https://zdndcmxxcxvjloftohhg.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_jqU_8wVSce7-uBO1s5oETA__xf2Z0R_';
@@ -188,7 +188,7 @@
 
   async function ensureQRCodeLib(){
     if (typeof QRCode !== 'undefined') return;
-    await loadScript('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js');
     // kurzer Moment geben, falls das Skript zwar geladen aber noch nicht
     // vollständig ausgewertet wurde
     for (let i = 0; i < 20 && typeof QRCode === 'undefined'; i++){
