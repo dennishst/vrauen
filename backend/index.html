@@ -55,6 +55,7 @@
   .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--navy);}
   .field-check{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:14px;}
   .field-check input{width:auto;}
+  .field-hint{font-size:11.5px;opacity:0.6;margin-top:5px;line-height:1.4;}
   .btn{
     display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
     font-family:var(--body);font-weight:800;font-size:14.5px;padding:14px;border-radius:999px;
@@ -472,7 +473,14 @@
         </label>
       </div>
       <div class="field"><label for="ev-name">Name *</label><input type="text" id="ev-name" required></div>
-      <div class="field"><label for="ev-ort">Ort</label><input type="text" id="ev-ort"></div>
+      <div class="field"><label for="ev-speakerin">Speakerin</label><input type="text" id="ev-speakerin" placeholder="z.B. Judith Dada"></div>
+      <div class="field"><label for="ev-thema">Thema</label><input type="text" id="ev-thema" placeholder="z.B. KI-Investorin"></div>
+      <div class="field"><label for="ev-ort">Ort</label><input type="text" id="ev-ort" placeholder="z.B. Festsaal Stralsund"></div>
+      <div class="field">
+        <label for="ev-maps-url">Google-Maps-Link (Standort)</label>
+        <input type="url" id="ev-maps-url" placeholder="https://maps.google.com/?q=...">
+        <p class="field-hint">In Google Maps den Ort suchen → „Teilen" → Link kopieren und hier einfügen. Auf der Event-Seite kann man dann auf den Ort klicken und bekommt Adresse & Route direkt in Google Maps.</p>
+      </div>
       <div class="field"><label for="ev-beschreibung">Beschreibung</label><textarea id="ev-beschreibung"></textarea></div>
       <div class="field"><label for="ev-datum">Datum *</label><input type="date" id="ev-datum" required></div>
       <div class="field"><label for="ev-zeit">Zeit</label><input type="time" id="ev-zeit"></div>
@@ -1414,6 +1422,7 @@
           </div>
           <div class="body">
             <h4>${escapeHTML(row.name)}</h4>
+            ${row.speakerin ? `<div class="meta" style="font-weight:800;">${escapeHTML(row.speakerin)}${row.thema ? ' · ' + escapeHTML(row.thema) : ''}</div>` : ''}
             <div class="meta">${fmtDatum(row.datum, row.zeit)}${row.ort ? ' · ' + escapeHTML(row.ort) : ''}</div>
             <div class="desc">${escapeHTML(row.beschreibung || '')}</div>
             <span class="badge ${row.anmeldung_moeglich ? 'bestaetigt' : 'abgemeldet'}">${row.anmeldung_moeglich ? 'Anmeldung offen' : 'Anmeldung geschlossen'}</span>
@@ -1456,7 +1465,10 @@
     document.getElementById('ev-id').value = row ? row.id : '';
     document.getElementById('ev-bild-url').value = row && row.bild_url ? row.bild_url : '';
     document.getElementById('ev-name').value = row ? row.name : '';
+    document.getElementById('ev-speakerin').value = row ? (row.speakerin || '') : '';
+    document.getElementById('ev-thema').value = row ? (row.thema || '') : '';
     document.getElementById('ev-ort').value = row ? (row.ort || '') : '';
+    document.getElementById('ev-maps-url').value = row ? (row.maps_url || '') : '';
     document.getElementById('ev-beschreibung').value = row ? (row.beschreibung || '') : '';
     document.getElementById('ev-datum').value = row ? row.datum : '';
     document.getElementById('ev-zeit').value = row && row.zeit ? row.zeit.slice(0,5) : '';
@@ -1488,7 +1500,10 @@
     if (demoMode){
       const payload = {
         name: document.getElementById('ev-name').value.trim(),
+        speakerin: document.getElementById('ev-speakerin').value.trim() || null,
+        thema: document.getElementById('ev-thema').value.trim() || null,
         ort: document.getElementById('ev-ort').value.trim() || null,
+        maps_url: document.getElementById('ev-maps-url').value.trim() || null,
         beschreibung: document.getElementById('ev-beschreibung').value.trim() || null,
         datum: document.getElementById('ev-datum').value,
         zeit: document.getElementById('ev-zeit').value || null,
@@ -1522,7 +1537,10 @@
 
     const payload = {
       name: document.getElementById('ev-name').value.trim(),
+      speakerin: document.getElementById('ev-speakerin').value.trim() || null,
+      thema: document.getElementById('ev-thema').value.trim() || null,
       ort: document.getElementById('ev-ort').value.trim() || null,
+      maps_url: document.getElementById('ev-maps-url').value.trim() || null,
       beschreibung: document.getElementById('ev-beschreibung').value.trim() || null,
       datum: document.getElementById('ev-datum').value,
       zeit: document.getElementById('ev-zeit').value || null,
