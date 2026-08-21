@@ -337,6 +337,84 @@
   .nl-schedule-row{display:flex;gap:10px;margin-top:14px;align-items:flex-end;}
   .nl-schedule-row .field{flex:1;margin-bottom:0;}
   .status-badge-row{display:flex;gap:8px;align-items:center;}
+
+  /* ================================================================
+     MOBILE-OPTIMIERUNG
+     ================================================================ */
+  @media (max-width:760px){
+    /* Header: Titel und Logout untereinander statt gequetscht */
+    header.admin-header{
+      flex-direction:column;align-items:flex-start;gap:10px;padding:16px 18px;
+    }
+    header.admin-header h1{font-size:17px;}
+    header.admin-header > div{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+
+    /* Weniger Rand, damit mehr Platz für Inhalte bleibt */
+    main{padding:18px 14px 70px;}
+
+    /* Haupt-Reiter: horizontal scrollbar statt Umbruch, wirkt wie eine App */
+    .tabs{
+      flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+      width:100%;padding:5px;scrollbar-width:none;
+    }
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab-btn{padding:10px 16px;font-size:13px;flex:none;}
+
+    /* Unter-Reiter: ebenfalls horizontal scrollbar */
+    .subtabs{overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .subtabs::-webkit-scrollbar{display:none;}
+    .subtab-btn{display:inline-block;margin-right:18px;font-size:13px;}
+
+    /* Toolbar: Buttons untereinander, volle Breite -- leichter zu treffen */
+    .toolbar{flex-direction:column;align-items:stretch;}
+    .toolbar-actions{width:100%;}
+    .toolbar-actions .refresh-btn{width:100%;}
+    .add-btn{width:100%;}
+
+    /* Tabellen: etwas kompakter, bleiben horizontal scrollbar (siehe .card) */
+    .card{-webkit-overflow-scrolling:touch;}
+    th,td{padding:11px 12px;font-size:13px;}
+    .msg-cell{max-width:180px;}
+
+    /* Modals: näher an Vollbild, größere Tippflächen */
+    .modal-overlay{padding:0;align-items:flex-end;}
+    .modal-box{
+      max-width:none;width:100%;border-radius:22px 22px 0 0;
+      max-height:92vh;padding:26px 20px 24px;
+    }
+    .modal-box h3{font-size:18px;margin-bottom:16px;}
+    .modal-actions{flex-direction:column-reverse;}
+    .modal-actions .btn{width:100%;}
+
+    /* Event-Karten: eine Spalte, besser lesbar */
+    .event-grid{grid-template-columns:1fr;}
+
+    /* Stat-Kacheln: zwei pro Reihe statt sehr schmal */
+    .stat-cards{grid-template-columns:repeat(2,1fr);}
+
+    /* Zeilen-Aktionen (Löschen/Abmelden etc.) untereinander bei wenig Platz */
+    .row-actions{flex-direction:column;align-items:stretch;gap:6px;}
+    .row-actions .small-btn{width:100%;}
+
+    /* Newsletter-Baukasten: Editor/Vorschau schon ab 760px gestapelt (siehe oben) */
+    .nl-actions .btn{min-width:0;flex:1 1 100%;}
+
+    /* Scan-Bereich: Video zuerst, Bedienelemente darunter */
+    .scan-side{order:2;}
+    .scan-video-wrap{order:1;}
+
+    /* Farbwahl im Rich-Text-Editor: größere Tippflächen */
+    .color-swatch{width:32px;height:32px;}
+
+    /* Allgemein größere Tippflächen für Buttons */
+    .small-btn,.mark-btn,.refresh-btn,.add-btn,.btn-outline{padding:9px 16px;font-size:12.5px;}
+  }
+
+  @media (max-width:420px){
+    .stat-cards{grid-template-columns:1fr 1fr;}
+    header.admin-header h1{font-size:16px;}
+    .login-box{padding:30px 24px;}
+  }
 </style>
 </head>
 <body>
@@ -561,6 +639,26 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Abbrechen</button>
         <button type="submit" class="btn" id="eventSaveBtn">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== TEILNEHMERIN HINZUFÜGEN MODAL ===== -->
+<div class="modal-overlay" id="addAttendeeModalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAddAttendeeModal()" aria-label="Schließen">&times;</button>
+    <h3 id="addAttendeeModalTitle">Teilnehmerin hinzufügen</h3>
+    <form id="addAttendeeForm">
+      <input type="hidden" id="aa-event-id">
+      <div class="field"><label for="aa-vorname">Vorname *</label><input type="text" id="aa-vorname" required></div>
+      <div class="field"><label for="aa-nachname">Nachname</label><input type="text" id="aa-nachname"></div>
+      <div class="field"><label for="aa-unternehmen">Unternehmen</label><input type="text" id="aa-unternehmen"></div>
+      <div class="field"><label for="aa-email">E-Mail *</label><input type="email" id="aa-email" required></div>
+      <p class="field-hint">Erzeugt einen normalen Anmelde-Eintrag inkl. QR-Check-in-Code. Es wird keine Bestätigungsmail verschickt.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeAddAttendeeModal()">Abbrechen</button>
+        <button type="submit" class="btn" id="addAttendeeSaveBtn">Hinzufügen</button>
       </div>
     </form>
   </div>
@@ -1557,7 +1655,8 @@
     el.className = '';
     el.innerHTML = events.map(ev => {
       const regs = regsByEvent[ev.id] || [];
-      const checkedInCount = regs.filter(r => r.checked_in).length;
+      const activeRegs = regs.filter(r => !r.storniert);
+      const checkedInCount = activeRegs.filter(r => r.checked_in).length;
       return `
         <div class="card" style="margin-bottom:18px;">
           <div style="padding:16px 20px;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -1565,25 +1664,35 @@
               <h4 style="font-size:15px;">${escapeHTML(ev.name)}</h4>
               <div class="meta" style="font-size:12.5px;opacity:0.65;">${fmtDatum(ev.datum, ev.zeit)}${ev.ort ? ' · ' + escapeHTML(ev.ort) : ''}</div>
             </div>
-            <div style="display:flex;gap:8px;">
-              <span class="count-pill">${regs.length} Anmeldung${regs.length === 1 ? '' : 'en'}</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <span class="count-pill">${activeRegs.length} Anmeldung${activeRegs.length === 1 ? '' : 'en'}</span>
               <span class="count-pill" style="background:#DFF3E4;color:#1F6B36;">${checkedInCount} eingecheckt</span>
+              <button class="small-btn" onclick='openAddAttendeeModal(${JSON.stringify(ev.id)}, ${JSON.stringify(ev.name)})'>+ Teilnehmerin</button>
             </div>
           </div>
           ${regs.length === 0 ? `
             <div style="padding:18px 20px;font-size:13px;opacity:0.55;">Noch keine Anmeldungen.</div>
           ` : `
             <table>
-              <thead><tr><th>Vorname</th><th>Nachname</th><th>Unternehmen</th><th>E-Mail</th><th>Angemeldet am</th><th>Check-in</th></tr></thead>
+              <thead><tr><th>Vorname</th><th>Nachname</th><th>Unternehmen</th><th>E-Mail</th><th>Angemeldet am</th><th>Check-in</th><th>Status</th><th></th></tr></thead>
               <tbody>
                 ${regs.map(r => `
-                  <tr>
+                  <tr${r.storniert ? ' style="opacity:0.5;"' : ''}>
                     <td>${escapeHTML(r.vorname || '—')}</td>
                     <td>${escapeHTML(r.nachname || '—')}</td>
                     <td>${escapeHTML(r.unternehmen || '—')}</td>
                     <td>${escapeHTML(r.email || '—')}</td>
                     <td>${fmtDate(r.created_at)}</td>
                     <td>${r.checked_in ? `<span class="badge bestaetigt">✓ ${fmtDate(r.checked_in_at)}</span>` : `<span class="badge abgemeldet">–</span>`}</td>
+                    <td>${r.storniert ? `<span class="badge abgemeldet">Abgemeldet</span>` : `<span class="badge bestaetigt">Aktiv</span>`}</td>
+                    <td>
+                      <div class="row-actions">
+                        ${r.storniert
+                          ? `<button class="small-btn" onclick="toggleStorniert('${r.id}', false)">Reaktivieren</button>`
+                          : `<button class="small-btn" onclick="toggleStorniert('${r.id}', true)">Abmelden</button>`}
+                        <button class="small-btn danger" onclick="deleteRegistration('${r.id}')">Löschen</button>
+                      </div>
+                    </td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1591,6 +1700,85 @@
           `}
         </div>`;
     }).join('');
+  }
+
+  /* ---------- Teilnehmerin hinzufügen / abmelden / löschen ---------- */
+  const addAttendeeModalOverlay = document.getElementById('addAttendeeModalOverlay');
+  const addAttendeeForm = document.getElementById('addAttendeeForm');
+
+  function openAddAttendeeModal(eventId, eventName){
+    document.getElementById('addAttendeeModalTitle').textContent = 'Teilnehmerin hinzufügen — ' + eventName;
+    document.getElementById('aa-event-id').value = eventId;
+    addAttendeeForm.reset();
+    addAttendeeModalOverlay.classList.add('open');
+  }
+  function closeAddAttendeeModal(){
+    addAttendeeModalOverlay.classList.remove('open');
+  }
+  addAttendeeModalOverlay.addEventListener('click', (e) => { if (e.target === addAttendeeModalOverlay) closeAddAttendeeModal(); });
+
+  addAttendeeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const eventId = document.getElementById('aa-event-id').value;
+    const vorname = document.getElementById('aa-vorname').value.trim();
+    const nachname = document.getElementById('aa-nachname').value.trim();
+    const unternehmen = document.getElementById('aa-unternehmen').value.trim();
+    const email = document.getElementById('aa-email').value.trim();
+    const saveBtn = document.getElementById('addAttendeeSaveBtn');
+
+    if (!vorname || !email){
+      alert('Bitte Vorname und E-Mail ausfüllen.');
+      return;
+    }
+    saveBtn.disabled = true;
+
+    if (demoMode){
+      if (!DEMO_REGISTRATIONS[eventId]) DEMO_REGISTRATIONS[eventId] = [];
+      DEMO_REGISTRATIONS[eventId].unshift({
+        id: 'dr-' + Date.now(), vorname, nachname: nachname || null, unternehmen: unternehmen || null,
+        email, created_at: new Date().toISOString(), checked_in: false, storniert: false
+      });
+      saveBtn.disabled = false;
+      closeAddAttendeeModal();
+      renderAttendeesOverview(allEvents);
+      return;
+    }
+
+    const { error } = await sb.from('event_registrations').insert({
+      event_id: eventId, vorname, nachname: nachname || null, unternehmen: unternehmen || null, email
+    });
+    saveBtn.disabled = false;
+    if (error){ alert('Fehler beim Hinzufügen: ' + error.message); return; }
+    closeAddAttendeeModal();
+    renderAttendeesOverview(allEvents);
+  });
+
+  async function toggleStorniert(id, newValue){
+    if (demoMode){
+      Object.values(DEMO_REGISTRATIONS).forEach(list => {
+        const item = list.find(r => r.id === id);
+        if (item) item.storniert = newValue;
+      });
+      renderAttendeesOverview(allEvents);
+      return;
+    }
+    const { error } = await sb.from('event_registrations').update({ storniert: newValue }).eq('id', id);
+    if (error){ alert('Fehler: ' + error.message); return; }
+    renderAttendeesOverview(allEvents);
+  }
+
+  async function deleteRegistration(id){
+    if (!confirm('Diese Anmeldung wirklich endgültig löschen? Das kann nicht rückgängig gemacht werden.')) return;
+    if (demoMode){
+      Object.keys(DEMO_REGISTRATIONS).forEach(evId => {
+        DEMO_REGISTRATIONS[evId] = DEMO_REGISTRATIONS[evId].filter(r => r.id !== id);
+      });
+      renderAttendeesOverview(allEvents);
+      return;
+    }
+    const { error } = await sb.from('event_registrations').delete().eq('id', id);
+    if (error){ alert('Fehler beim Löschen: ' + error.message); return; }
+    renderAttendeesOverview(allEvents);
   }
 
   /* ---------- Scannen (QR-Code-Check-in) ---------- */
