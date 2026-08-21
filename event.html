@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
   const SUPABASE_URL = 'https://zdndcmxxcxvjloftohhg.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_jqU_8wVSce7-uBO1s5oETA__xf2Z0R_';
@@ -65,6 +66,8 @@
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .form-note{display:none;margin-top:16px;padding:14px 16px;background:var(--pink-card);border-radius:12px;font-size:13.5px;color:var(--navy);}
   .form-note.show{display:block;}
+  .form-note img{display:block;margin:14px auto 0;width:180px;height:180px;border-radius:12px;background:var(--white);padding:8px;}
+  .form-note .qr-hint{text-align:center;font-size:12px;opacity:0.7;margin-top:8px;}
   .form-error{display:none;margin-top:14px;color:#B3324A;font-size:12.5px;}
 
   .closed-note{background:var(--white);border-radius:var(--r-lg);padding:32px;text-align:center;font-size:15px;opacity:0.8;margin-bottom:60px;}
@@ -123,7 +126,7 @@
     content.innerHTML = eventHTML(data);
 
     if (data.anmeldung_moeglich){
-      document.getElementById('eventRegForm').addEventListener('submit', (e) => handleSubmit(e, data.id));
+      document.getElementById('eventRegForm').addEventListener('submit', (e) => handleSubmit(e, data));
     }
   }
 
@@ -172,8 +175,9 @@
     `;
   }
 
-  async function handleSubmit(e, eventId){
+  async function handleSubmit(e, event){
     e.preventDefault();
+    const eventId = event.id;
     const vorname = document.getElementById('ev-vorname').value.trim();
     const nachname = document.getElementById('ev-nachname').value.trim();
     const unternehmen = document.getElementById('ev-unternehmen').value.trim();
@@ -193,9 +197,9 @@
 
     btn.disabled = true;
     try {
-      const { error } = await sb.from('event_registrations').insert({
+      const { data: reg, error } = await sb.from('event_registrations').insert({
         event_id: eventId, vorname, nachname: nachname || null, unternehmen: unternehmen || null, email: mail
-      });
+      }).select().single();
       if (error) throw error;
 
       if (wantsNewsletter){
@@ -206,8 +210,52 @@
         }
       }
 
+      note.innerHTML = 'Danke für deine Anmeldung! Wir freuen uns auf dich.<div class="qr-hint">Dein QR-Code fürs Einlass-Scannen — auch per E-Mail an dich unterwegs.</div>';
       note.classList.add('show');
       document.getElementById('eventRegForm').reset();
+
+      // QR-Code generieren, anzeigen, hochladen und Bestätigungsmail auslösen.
+      // Läuft im Hintergrund -- die Anmeldung selbst ist bereits gespeichert,
+      // ein Fehler hier darf der Nutzerin keinen Fehler vorgaukeln.
+      try {
+        const qrDataUrl = await QRCode.toDataURL(reg.checkin_token, { width: 400, margin: 1 });
+
+        const img = document.createElement('img');
+        img.src = qrDataUrl;
+        img.alt = 'Dein Check-in QR-Code';
+        note.appendChild(img);
+
+        const blob = await (await fetch(qrDataUrl)).blob();
+        const path = `${reg.checkin_token}.png`;
+        const { error: uploadError } = await sb.storage.from('qr-codes').upload(path, blob, {
+          contentType: 'image/png', upsert: true
+        });
+
+        let qrUrl = null;
+        if (!uploadError){
+          const { data: urlData } = sb.storage.from('qr-codes').getPublicUrl(path);
+          qrUrl = urlData.publicUrl;
+          await sb.from('event_registrations').update({ qr_url: qrUrl }).eq('id', reg.id);
+        }
+
+        const [y,m,d] = event.datum.split('-');
+        await fetch(`${SUPABASE_URL}/functions/v1/send-event-confirmation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            toEmail: mail,
+            vorname,
+            eventName: event.name,
+            eventDatum: `${d}.${m}.${y}`,
+            eventZeit: event.zeit ? event.zeit.slice(0,5) : null,
+            eventOrt: event.ort || null,
+            eventUrl: window.location.href.split('?')[0] + '?id=' + eventId,
+            qrUrl
+          })
+        });
+      } catch (qrErr) {
+        console.error('QR-Code/Bestätigungsmail Fehler:', qrErr);
+      }
     } catch (err) {
       console.error('Supabase Fehler:', err);
       errorMsg.textContent = 'Es gab ein Problem beim Senden. Vielleicht bist du schon angemeldet? Bei Fragen schreib uns an ' + MAIL_TO + '.';
