@@ -488,6 +488,7 @@
     .hero-card h1{font-size:clamp(22px,6vw,30px);}
     .hero-tags{grid-template-columns:repeat(2,1fr);}
     .tag{font-size:11.5px;padding:12px 8px;}
+    .hero-btn-row{gap:8px;}
     .hero{padding-bottom:72px;}
     .stats-wrap{margin-top:-48px;padding-bottom:0;}
     .stats-card{padding:34px 20px;border-radius:22px;}
@@ -511,7 +512,7 @@
     .newsletter-box{padding:28px 22px;border-radius:20px;}
     .team-grid{grid-template-columns:repeat(2,1fr);gap:24px 16px;}
     .team-photo{width:72px;}
-    .supporter-row{gap:24px;}
+    .supporter-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;justify-items:center;}
     .supporter-logo{height:40px;}
     .supporter-logo img{max-height:40px;max-width:140px;}
     .partner-grid{grid-template-columns:1fr;}
@@ -528,15 +529,38 @@
     .newsletter button{width:100%;}
     .footer-top{flex-direction:column;}
     .footer-cols{gap:36px;}
-    .supporter-row{gap:28px;}
   }
   @media (max-width:400px){
-    .hero-tags{grid-template-columns:1fr;}
     .stats-card h2{font-size:20px;}
     .team-grid{grid-template-columns:1fr 1fr;gap:20px 14px;}
     .modal-box{padding:30px 22px;}
     .modal-box h3{font-size:19px;margin-right:26px;}
   }
+
+  /* ---------- Popup: nächstes Event ---------- */
+  .event-popup-overlay{
+    position:fixed;inset:0;background:rgba(20,63,100,0.55);z-index:300;
+    display:none;align-items:center;justify-content:center;padding:20px;
+    backdrop-filter:blur(2px);
+  }
+  .event-popup-overlay.open{display:flex;}
+  .event-popup-box{
+    background:var(--white);border-radius:var(--r-lg);max-width:420px;width:100%;
+    overflow:hidden;position:relative;box-shadow:0 30px 70px -20px rgba(20,63,100,0.5);
+    animation:popupIn .35s ease;
+  }
+  @keyframes popupIn{from{opacity:0;transform:translateY(16px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .event-popup-close{
+    position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;
+    background:rgba(255,255,255,0.9);border:none;font-size:20px;color:var(--navy);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;
+  }
+  .event-popup-img{width:100%;aspect-ratio:1/1;background:var(--pink);display:block;object-fit:cover;}
+  .event-popup-body{padding:26px 28px 30px;}
+  .event-popup-eyebrow{font-size:11.5px;font-weight:800;color:var(--navy-soft);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
+  .event-popup-body h3{font-size:20px;margin-bottom:6px;}
+  .event-popup-meta{font-size:13px;opacity:0.75;margin-bottom:16px;}
+  .event-popup-body .btn{width:100%;}
 </style>
 </head>
 <body>
@@ -763,7 +787,7 @@
             <div class="involve-body">
               <h4>Zur nächsten Veranstaltung kommen</h4>
               <p>Zweimal im Jahr, wechselnde Orte im Landkreis. Kostenlos, ohne Voranmeldepflicht, einfach da sein.</p>
-              <a href="https://www.makerport.de/event" target="_blank" rel="noopener" class="btn btn-navy btn-sm">Nächstes Treffen</a>
+              <a href="/events.html" id="mitmachenNextEventLink" class="btn btn-navy btn-sm">Nächstes Treffen</a>
             </div>
           </div>
           <div class="involve-card">
@@ -1009,6 +1033,11 @@
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box" id="modalBox"></div>
+</div>
+
+<!-- ===== POPUP: NÄCHSTES EVENT ===== -->
+<div class="event-popup-overlay" id="eventPopupOverlay">
+  <div class="event-popup-box" id="eventPopupBox"></div>
 </div>
 
 <script>
@@ -1356,10 +1385,12 @@
         .limit(1);
 
       const heroBtn = document.getElementById('nextEventBtn');
+      const mitmachenBtn = document.getElementById('mitmachenNextEventLink');
       const timelineSlot = document.getElementById('nextEventTimelineSlot');
 
       if (error || !data || data.length === 0){
         if (heroBtn) heroBtn.href = '/events.html';
+        if (mitmachenBtn) mitmachenBtn.href = '/events.html';
         return;
       }
 
@@ -1370,6 +1401,9 @@
       if (heroBtn){
         heroBtn.href = `/event.html?id=${ev.id}`;
         heroBtn.textContent = `Nächstes Treffen · ${d}.${m}.`;
+      }
+      if (mitmachenBtn){
+        mitmachenBtn.href = `/event.html?id=${ev.id}`;
       }
 
       if (timelineSlot){
@@ -1390,17 +1424,66 @@
             </div>
           </div>`;
       }
+
+      showEventPopup(ev, datumFormatted);
     } catch (err) {
       console.error('Konnte nächstes Event nicht laden:', err);
     }
   }
   loadNextEvent();
 
+  /* ---------- Popup: nächstes Event ---------- */
+  const eventPopupOverlay = document.getElementById('eventPopupOverlay');
+  const eventPopupBox = document.getElementById('eventPopupBox');
+
+  function showEventPopup(ev, datumFormatted){
+    // Nur einmal pro Browser-Sitzung zeigen, und nicht erneut für dasselbe Event,
+    // falls die Nutzerin schon einmal geschlossen hat.
+    const dismissedId = sessionStorage.getItem('vrauenPopupDismissed');
+    if (dismissedId === ev.id) return;
+
+    eventPopupBox.innerHTML = `
+      <button class="event-popup-close" id="eventPopupClose" aria-label="Schließen">&times;</button>
+      ${ev.bild_url
+        ? `<img class="event-popup-img" src="${escapeHTML(ev.bild_url)}" alt="${escapeHTML(ev.name)}">`
+        : `<div class="event-popup-img"></div>`}
+      <div class="event-popup-body">
+        <div class="event-popup-eyebrow">Nächstes Treffen</div>
+        <h3>${escapeHTML(ev.speakerin || ev.name)}</h3>
+        <div class="event-popup-meta">
+          ${ev.thema ? escapeHTML(ev.thema) + ' · ' : ''}${datumFormatted}${ev.zeit ? ' · ' + ev.zeit.slice(0,5) + ' Uhr' : ''}${ev.ort ? ' · ' + escapeHTML(ev.ort) : ''}
+        </div>
+        <a href="/event.html?id=${ev.id}" class="btn btn-navy">Jetzt anmelden</a>
+      </div>
+    `;
+
+    // kleine Verzögerung, damit das Popup nicht sofort beim Laden aufploppt
+    setTimeout(() => {
+      eventPopupOverlay.classList.add('open');
+    }, 1200);
+
+    document.getElementById('eventPopupClose').addEventListener('click', () => closeEventPopup(ev.id));
+    eventPopupOverlay.addEventListener('click', (e) => {
+      if (e.target === eventPopupOverlay) closeEventPopup(ev.id);
+    });
+  }
+
+  function closeEventPopup(eventId){
+    eventPopupOverlay.classList.remove('open');
+    sessionStorage.setItem('vrauenPopupDismissed', eventId);
+  }
+
   /* Öffnet automatisch das Datenschutz-Modal, wenn die Seite mit
      ?zeige=datenschutz aufgerufen wird (z.B. Link von einer
      Event-Landingpage aus). */
-  if (new URLSearchParams(window.location.search).get('zeige') === 'datenschutz') {
+  /* Öffnet automatisch das Datenschutz- oder Impressum-Modal, wenn die
+     Seite mit ?zeige=datenschutz bzw. ?zeige=impressum aufgerufen wird
+     (z.B. Link von einer Unterseite aus). */
+  const zeigeParam = new URLSearchParams(window.location.search).get('zeige');
+  if (zeigeParam === 'datenschutz') {
     openModal(datenschutzModalHTML());
+  } else if (zeigeParam === 'impressum') {
+    openModal(impressumModalHTML());
   }
 </script>
 
