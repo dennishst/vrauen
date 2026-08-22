@@ -79,9 +79,18 @@
   .notfound h1{font-size:22px;margin-bottom:12px;}
   .notfound a{color:var(--navy);font-weight:800;}
 
-  footer{padding:30px 0 50px;text-align:center;font-size:12px;opacity:0.55;}
 
   /* ---------- Vollständiger Seiten-Header (wie Startseite) ---------- */
+  header .btn{
+    width:auto;margin-top:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font-family:var(--body);font-weight:800;font-size:14.5px;
+    padding:16px 30px;border-radius:var(--r-pill);
+    border:1.5px solid transparent;cursor:pointer;text-decoration:none;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  header .btn:hover{transform:translateY(-2px);opacity:1;}
+  header .btn-pink{background:var(--pink);color:var(--navy);}
+  header .btn-pink:hover{box-shadow:0 10px 24px -10px rgba(20,63,100,0.35);background:var(--pink-deep);}
   .top-banner{
     background:var(--navy);color:var(--pink-card);text-align:center;
     padding:9px 16px;font-family:var(--body);font-weight:800;font-size:12.5px;
@@ -134,6 +143,7 @@
 
   /* ---------- Footer (wie Startseite) ---------- */
   footer.site-footer{padding:60px 0 30px;margin-top:60px;border-top:1px solid rgba(20,63,100,0.1);}
+  footer.site-footer .wrap{max-width:1160px;}
   .footer-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:32px;padding-bottom:34px;border-bottom:1px solid rgba(20,63,100,0.1);}
   .footer-brand .logo{display:flex;align-items:center;}
   .footer-brand .logo img{height:38px;width:auto;}
@@ -223,11 +233,6 @@
     </div>
   </div>
 </footer>
-
-
-  <footer>
-    <div class="wrap">© 2026 VRauen · <a href="/?zeige=datenschutz" style="color:var(--navy);">Datenschutz</a></div>
-  </footer>
 
 <script>
   function escapeHTML(str){
