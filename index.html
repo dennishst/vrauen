@@ -1437,6 +1437,10 @@
   const eventPopupBox = document.getElementById('eventPopupBox');
 
   function showEventPopup(ev, datumFormatted){
+    // In der eingebetteten Admin-Vorschau (Inhalte-Tab im Backend) soll das
+    // Popup nicht aufploppen, damit es beim Bearbeiten nicht stört.
+    if (window.self !== window.top) return;
+
     // Nur einmal pro Browser-Sitzung zeigen, und nicht erneut für dasselbe Event,
     // falls die Nutzerin schon einmal geschlossen hat.
     const dismissedId = sessionStorage.getItem('vrauenPopupDismissed');
