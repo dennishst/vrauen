@@ -240,6 +240,19 @@
   .img-preview{width:120px;height:120px;border-radius:12px;object-fit:cover;margin:0 auto 10px;display:block;}
   .content-preview-img{width:60px;height:60px;border-radius:8px;object-fit:cover;}
   .content-key{font-family:monospace;font-size:12px;background:var(--pink-card);padding:2px 8px;border-radius:6px;}
+
+  /* ---------- Inhalte: Website-Vorschau ---------- */
+  .content-preview-card{background:var(--white);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 20px 50px -30px rgba(20,63,100,0.35);}
+  .content-preview-toolbar-inner{
+    display:flex;gap:18px;flex-wrap:wrap;padding:12px 20px;background:var(--pink-card);
+    font-size:12.5px;font-weight:700;color:var(--navy);border-bottom:1px solid rgba(20,63,100,0.08);
+  }
+  .content-preview-frame-wrap{position:relative;background:#f4f4f4;}
+  #contentPreviewFrame{width:100%;height:75vh;border:none;display:block;background:var(--white);}
+  @media (max-width:720px){
+    .content-preview-toolbar-inner{font-size:11.5px;gap:10px;padding:10px 14px;}
+    #contentPreviewFrame{height:62vh;}
+  }
   .content-val{max-width:320px;font-size:13px;opacity:0.8;}
 
   /* ---------- Inhalte: Rich-Text + Vorschau ---------- */
@@ -647,16 +660,22 @@
     <!-- ---------- INHALTE ---------- -->
     <div class="panel" id="panel-content">
       <div class="note-box">
-        Hier änderst du nur Texte und Bilder — das Layout der Website bleibt immer gleich. Ein neues Feld wird erst auf der Website sichtbar, wenn im Code an der passenden Stelle das Kennzeichen <span class="content-key">data-cms="dein-key"</span> eingetragen ist.
+        Klicke direkt in der Vorschau auf einen <b>Text</b>, um ihn zu bearbeiten, oder auf ein <b>Bild</b>, um es zu ersetzen. Neue Felder werden erst sichtbar, wenn im Code an der passenden Stelle das Kennzeichen <span class="content-key">data-cms="dein-key"</span> eingetragen ist.
       </div>
       <div class="toolbar">
         <div class="toolbar-actions">
-          <button class="refresh-btn" onclick="loadContent()">Aktualisieren</button>
+          <button class="refresh-btn" onclick="reloadContentPreview()">Vorschau neu laden</button>
         </div>
         <button class="add-btn" onclick="openContentModal()">+ Neues Feld</button>
       </div>
-      <div class="card">
-        <div id="contentContent" class="loading">Lädt…</div>
+      <div class="content-preview-card">
+        <div class="content-preview-toolbar-inner">
+          <span>✏️ Klick auf Text = bearbeiten</span>
+          <span>🖼️ Klick auf Bild = ersetzen</span>
+        </div>
+        <div class="content-preview-frame-wrap">
+          <iframe id="contentPreviewFrame" src="/index.html" title="Website-Vorschau"></iframe>
+        </div>
       </div>
     </div>
   </main>
@@ -772,6 +791,7 @@
         </label>
       </div>
       <div class="modal-actions">
+        <button type="button" class="small-btn danger" id="contentDeleteBtn" onclick="deleteContentFromModal()" style="display:none;margin-right:auto;">Feld löschen</button>
         <button type="button" class="btn btn-secondary" onclick="closeContentModal()">Abbrechen</button>
         <button type="submit" class="btn" id="contentSaveBtn">Speichern</button>
       </div>
@@ -1002,7 +1022,20 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      const panel = document.getElementById('panel-' + btn.dataset.tab);
+      panel.classList.add('active');
+
+      // Beim Wechsel auf einen Haupt-Reiter immer den jeweils ERSTEN
+      // Unter-Reiter (und Unter-Filter) aktivieren, statt den zuletzt
+      // angeklickten Zustand zu behalten.
+      const firstSubtab = panel.querySelector('.subtab-btn[data-subtab]');
+      if (firstSubtab) firstSubtab.click();
+
+      const firstSubfilter = panel.querySelector('.subtab-btn[data-subfilter]');
+      if (firstSubfilter) firstSubfilter.click();
+
+      const firstSubfilterSub = panel.querySelector('.subtab-btn[data-subfilter-sub]');
+      if (firstSubfilterSub) firstSubfilterSub.click();
     });
   });
 
@@ -2245,12 +2278,17 @@
      INHALTE (Texte & Bilder der Website)
      ============================================================ */
   let pendingContentFile = null;
+  let allContentRows = [];
+  let contentPreviewWired = false;
 
   async function loadContent(){
-    const el = document.getElementById('contentContent');
-    el.className = 'loading'; el.textContent = 'Lädt…';
+    if (demoMode){
+      allContentRows = DEMO_CONTENT;
+      renderContent(DEMO_CONTENT);
+      return;
+    }
     const { data, error } = await sb.from('site_content').select('*').order('label', { ascending: true });
-    if (error){ el.textContent = 'Fehler beim Laden: ' + error.message; return; }
+    if (error){ console.error('Inhalte konnten nicht geladen werden:', error.message); return; }
     renderContent(data);
   }
 
@@ -2260,41 +2298,69 @@
     return tmp.textContent || tmp.innerText || '';
   }
 
+  // Ersetzt die frühere Tabellen-Ansicht: aktualisiert nur noch den Zähler
+  // und die Datenbasis, die von der Vorschau (siehe wireUpContentPreview)
+  // zum Nachschlagen per data-cms-Kennzeichen genutzt wird.
   function renderContent(data){
-    const el = document.getElementById('contentContent');
+    allContentRows = data;
     document.getElementById('countContent').textContent = data.length;
-    if (data.length === 0){
-      el.className = 'empty-state';
-      el.textContent = 'Noch keine Felder angelegt.';
+  }
+
+  function reloadContentPreview(){
+    loadContent();
+    const frame = document.getElementById('contentPreviewFrame');
+    if (!frame) return;
+    contentPreviewWired = false;
+    const base = frame.src.split('?')[0];
+    frame.src = base + '?preview=' + Date.now();
+  }
+
+  // Verdrahtet Klicks in der eingebetteten Live-Vorschau: Text- und
+  // Bild-Elemente mit [data-cms] werden hervorgehoben, ein Klick öffnet
+  // direkt das passende Bearbeiten-Modal (dasselbe wie über "+ Neues Feld").
+  function wireUpContentPreview(){
+    const frame = document.getElementById('contentPreviewFrame');
+    if (!frame) return;
+    let doc;
+    try {
+      doc = frame.contentDocument || frame.contentWindow.document;
+    } catch (err) {
+      console.error('Vorschau nicht erreichbar (evtl. andere Domain):', err);
       return;
     }
-    el.className = '';
-    el.innerHTML = `
-      <table>
-        <thead><tr><th>Beschreibung</th><th>Kennzeichen</th><th>Typ</th><th>Aktueller Wert</th><th>Zuletzt geändert</th><th></th></tr></thead>
-        <tbody>
-          ${data.map(row => `
-            <tr>
-              <td>${escapeHTML(row.label)}</td>
-              <td><span class="content-key">${escapeHTML(row.key)}</span></td>
-              <td>${row.type === 'image' ? 'Bild' : 'Text'}</td>
-              <td class="content-val">${
-                row.type === 'image'
-                  ? (row.value ? `<img src="${escapeHTML(row.value)}" class="content-preview-img">` : '—')
-                  : escapeHTML(stripHtml(row.value || '—').slice(0,80))
-              }</td>
-              <td>${fmtDate(row.updated_at)}</td>
-              <td>
-                <div class="row-actions">
-                  <button class="small-btn" onclick='openContentModal(${JSON.stringify(row).replace(/'/g,"&#39;")})'>Bearbeiten</button>
-                  <button class="small-btn danger" onclick="deleteContent('${row.key}')">Löschen</button>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>`;
+    if (!doc || !doc.head) return;
+
+    const style = doc.createElement('style');
+    style.textContent = `
+      [data-cms]{cursor:pointer!important;outline-offset:3px;transition:outline .12s ease, box-shadow .12s ease;}
+      [data-cms]:hover{outline:2.5px dashed #F3A9C4!important;box-shadow:0 0 0 6px rgba(243,169,196,0.20)!important;}
+    `;
+    doc.head.appendChild(style);
+
+    doc.querySelectorAll('[data-cms]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = el.getAttribute('data-cms');
+        const row = allContentRows.find(r => r.key === key);
+        if (!row){
+          if (confirm(`Für "${key}" gibt es noch kein Inhalte-Feld. Jetzt anlegen?`)){
+            openContentModal();
+            document.getElementById('ct-key').value = key;
+          }
+          return;
+        }
+        openContentModal(row);
+      }, true);
+    });
+
+    contentPreviewWired = true;
   }
+
+  document.getElementById('contentPreviewFrame').addEventListener('load', () => {
+    wireUpContentPreview();
+  });
+
 
   const contentModalOverlay = document.getElementById('contentModalOverlay');
   const contentForm = document.getElementById('contentForm');
@@ -2377,6 +2443,9 @@
       ctImgPreview.style.display = 'none';
       ctImgUploadText.textContent = 'Bild auswählen…';
     }
+    const deleteBtn = document.getElementById('contentDeleteBtn');
+    deleteBtn.style.display = row ? 'inline-flex' : 'none';
+    deleteBtn.dataset.key = row ? row.key : '';
     contentModalOverlay.classList.add('open');
   }
   function closeContentModal(){
@@ -2437,20 +2506,28 @@
     saveBtn.disabled = false;
     if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
     closeContentModal();
-    loadContent();
+    reloadContentPreview();
   });
 
+  async function deleteContentFromModal(){
+    const key = document.getElementById('contentDeleteBtn').dataset.key;
+    if (!key) return;
+    const ok = await deleteContent(key);
+    if (ok) closeContentModal();
+  }
+
   async function deleteContent(key){
-    if (!confirm('Dieses Feld wirklich löschen? Es verschwindet dann von der Website (bzw. zeigt keinen Wert mehr).')) return;
+    if (!confirm('Dieses Feld wirklich löschen? Es verschwindet dann von der Website (bzw. zeigt keinen Wert mehr).')) return false;
     if (demoMode){
       const idx = DEMO_CONTENT.findIndex(c => c.key === key);
       if (idx > -1) DEMO_CONTENT.splice(idx, 1);
       renderContent(DEMO_CONTENT);
-      return;
+      return true;
     }
     const { error } = await sb.from('site_content').delete().eq('key', key);
-    if (error){ alert('Fehler beim Löschen: ' + error.message); return; }
-    loadContent();
+    if (error){ alert('Fehler beim Löschen: ' + error.message); return false; }
+    reloadContentPreview();
+    return true;
   }
 
   checkSession();
