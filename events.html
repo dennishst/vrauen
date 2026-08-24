@@ -133,9 +133,178 @@
     .footer-cols{gap:30px;}
   }
 
+
+  /* ---------- Cookie-Hinweis ---------- */
+  .cookie-banner{
+    position:fixed;left:0;right:0;bottom:0;z-index:400;
+    background:var(--navy);color:var(--white);
+    padding:20px 24px;box-shadow:0 -8px 30px -10px rgba(0,0,0,0.35);
+    transform:translateY(120%);transition:transform .35s ease;
+  }
+  .cookie-banner.open{transform:translateY(0);}
+  .cookie-banner-inner{
+    max-width:1160px;margin:0 auto;display:flex;align-items:center;
+    justify-content:space-between;gap:28px;flex-wrap:wrap;
+  }
+  .cookie-banner-text{flex:1;min-width:240px;}
+  .cookie-banner-text p{font-size:13px;line-height:1.6;opacity:0.92;max-width:640px;margin:0;}
+  .cookie-banner-text a{color:var(--white);text-decoration:underline;font-weight:700;}
+  .cookie-banner-actions{display:flex;gap:10px;flex-wrap:wrap;flex:none;}
+  .cookie-btn{
+    flex:none;border:none;font-family:var(--body);font-weight:800;font-size:13px;
+    padding:12px 20px;border-radius:var(--r-pill);cursor:pointer;
+    transition:background .2s ease, opacity .2s ease;white-space:nowrap;
+  }
+  .cookie-btn-outline{background:transparent;color:var(--white);border:1.5px solid rgba(255,255,255,0.5);}
+  .cookie-btn-outline:hover{border-color:var(--white);background:rgba(255,255,255,0.08);}
+  .cookie-btn-primary{background:var(--pink);color:var(--navy);}
+  .cookie-btn-primary:hover{background:var(--pink-deep);}
+  @media (max-width:640px){
+    .cookie-banner{padding:18px 18px;}
+    .cookie-banner-inner{flex-direction:column;align-items:stretch;gap:16px;}
+    .cookie-banner-actions{flex-direction:column;}
+    .cookie-btn{width:100%;}
+  }
+
+  /* ---------- Barrierefreiheit ---------- */
+  .a11y-widget{position:fixed;left:18px;bottom:18px;z-index:390;}
+  .a11y-toggle{
+    width:50px;height:50px;border-radius:50%;background:var(--navy);color:var(--white);
+    border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 26px -10px rgba(20,63,100,0.55);transition:transform .2s ease;
+  }
+  .a11y-toggle:hover{transform:scale(1.06);}
+  .a11y-toggle-icon{width:26px;height:26px;display:block;}
+  .a11y-panel{
+    position:absolute;left:0;bottom:62px;width:270px;
+    background:var(--white);border-radius:var(--r-md);
+    box-shadow:0 20px 50px -20px rgba(20,63,100,0.45);
+    padding:18px 18px 16px;display:none;
+  }
+  .a11y-panel.open{display:block;}
+  .a11y-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .a11y-panel-header h4{font-size:15px;color:var(--navy);}
+  .a11y-close{background:none;border:none;font-size:20px;color:var(--navy);cursor:pointer;line-height:1;padding:2px 4px;}
+  .a11y-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(20,63,100,0.08);}
+  .a11y-row span{font-size:12.5px;font-weight:700;color:var(--navy);}
+  .a11y-btn-group{display:flex;gap:4px;}
+  .a11y-btn-group button{
+    width:28px;height:28px;border-radius:8px;border:1.5px solid var(--navy);background:var(--white);
+    color:var(--navy);font-size:11.5px;font-weight:800;cursor:pointer;
+  }
+  .a11y-btn-group button:hover{background:var(--pink-card);}
+  .a11y-toggle-row{
+    display:flex;align-items:center;justify-content:space-between;padding:9px 0;
+    border-bottom:1px solid rgba(20,63,100,0.08);cursor:pointer;
+  }
+  .a11y-toggle-row span{font-size:12.5px;font-weight:700;color:var(--navy);}
+  .a11y-toggle-row input{width:18px;height:18px;accent-color:var(--navy);cursor:pointer;}
+  .a11y-reset-btn{
+    margin-top:12px;width:100%;background:var(--pink-card);color:var(--navy);border:none;
+    font-family:var(--body);font-weight:800;font-size:12px;padding:10px;border-radius:var(--r-pill);
+    cursor:pointer;
+  }
+  .a11y-reset-btn:hover{background:var(--pink);}
+  @media (max-width:480px){
+    .a11y-widget{left:12px;bottom:12px;}
+    .a11y-panel{width:calc(100vw - 48px);}
+  }
+
+  /* ---------- Barrierefreiheits-Zustände (html-Klassen) ---------- */
+  html.a11y-contrast body{background:#000 !important;}
+  html.a11y-contrast *{
+    background-color:#000 !important;
+    color:#fff !important;
+    border-color:#fff !important;
+  }
+  html.a11y-contrast a{color:#ffe066 !important;text-decoration:underline !important;}
+  html.a11y-contrast .btn,
+  html.a11y-contrast button,
+  html.a11y-contrast input,
+  html.a11y-contrast textarea,
+  html.a11y-contrast select{
+    border:2px solid #fff !important;
+  }
+  html.a11y-contrast img{filter:grayscale(0.15) contrast(1.15);}
+
+  html.a11y-text-1 body{zoom:1.15;}
+  html.a11y-text-2 body{zoom:1.3;}
+  html.a11y-text-3 body{zoom:1.45;}
+  @supports not (zoom:1){
+    html.a11y-text-1 body{transform:scale(1.15);transform-origin:top left;width:86.9%;}
+    html.a11y-text-2 body{transform:scale(1.3);transform-origin:top left;width:76.9%;}
+    html.a11y-text-3 body{transform:scale(1.45);transform-origin:top left;width:68.9%;}
+  }
+
+  html.a11y-readable body, html.a11y-readable h1, html.a11y-readable h2,
+  html.a11y-readable h3, html.a11y-readable h4, html.a11y-readable p,
+  html.a11y-readable a, html.a11y-readable span, html.a11y-readable button{
+    font-family:Arial,Helvetica,sans-serif !important;
+    letter-spacing:0.02em !important;
+    line-height:1.8 !important;
+  }
+
+  html.a11y-underline a{text-decoration:underline !important;}
+
+  html.a11y-motion *, html.a11y-motion *::before, html.a11y-motion *::after{
+    animation:none !important;
+    transition:none !important;
+    scroll-behavior:auto !important;
+  }
+
 </style>
 </head>
 <body>
+
+<!-- ===== COOKIE-HINWEIS ===== -->
+<div class="cookie-banner" id="cookieBanner">
+  <div class="cookie-banner-inner">
+    <div class="cookie-banner-text">
+      <p>Wir nutzen technisch notwendige Speicherung (z. B. Anmelde-Sitzung im Admin-Bereich, Barrierefreiheits-Einstellungen). Optional möchten wir künftig auch anonyme Statistiken erfassen, um die Seite zu verbessern — dafür bitten wir um deine Wahl. Mehr dazu in unserer <a href="/datenschutz.html">Datenschutzerklärung</a>.</p>
+    </div>
+    <div class="cookie-banner-actions">
+      <button class="cookie-btn cookie-btn-outline" id="cookieRejectBtn">Alle ablehnen</button>
+      <button class="cookie-btn cookie-btn-outline" id="cookieNecessaryBtn">Nur notwendige</button>
+      <button class="cookie-btn cookie-btn-primary" id="cookieAcceptBtn">Alle akzeptieren</button>
+    </div>
+  </div>
+</div>
+<!-- ===== BARRIEREFREIHEIT ===== -->
+<div class="a11y-widget">
+  <button class="a11y-toggle" id="a11yToggle" aria-label="Barrierefreiheit-Einstellungen öffnen" aria-expanded="false" title="Barrierefreiheit"><img src="data:image/png;base64,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" alt="" class="a11y-toggle-icon"></button>
+  <div class="a11y-panel" id="a11yPanel" role="dialog" aria-label="Barrierefreiheit-Einstellungen">
+    <div class="a11y-panel-header">
+      <h4>Barrierefreiheit</h4>
+      <button class="a11y-close" id="a11yClose" aria-label="Schließen">&times;</button>
+    </div>
+    <div class="a11y-row">
+      <span>Textgröße</span>
+      <div class="a11y-btn-group">
+        <button type="button" data-a11y="text-decrease" aria-label="Text verkleinern">A−</button>
+        <button type="button" data-a11y="text-reset" aria-label="Textgröße zurücksetzen">A</button>
+        <button type="button" data-a11y="text-increase" aria-label="Text vergrößern">A+</button>
+      </div>
+    </div>
+    <label class="a11y-toggle-row">
+      <span>Starker Kontrast</span>
+      <input type="checkbox" id="a11yContrast">
+    </label>
+    <label class="a11y-toggle-row">
+      <span>Lesefreundliche Schrift</span>
+      <input type="checkbox" id="a11yReadable">
+    </label>
+    <label class="a11y-toggle-row">
+      <span>Links unterstreichen</span>
+      <input type="checkbox" id="a11yUnderline">
+    </label>
+    <label class="a11y-toggle-row" style="border-bottom:none;">
+      <span>Animationen reduzieren</span>
+      <input type="checkbox" id="a11yMotion">
+    </label>
+    <button type="button" class="a11y-reset-btn" id="a11yReset">Alles zurücksetzen</button>
+  </div>
+</div>
+
 
 <div class="top-banner">Ein Netzwerk für Frauen aus dem Landkreis Vorpommern-Rügen</div>
 
@@ -208,7 +377,7 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 MakerPort Stralsund. Alle Rechte vorbehalten.</span>
-      <span><a href="/?zeige=impressum">Impressum</a> · <a href="/?zeige=datenschutz">Datenschutz</a></span>
+      <span><a href="/impressum.html">Impressum</a> · <a href="/datenschutz.html">Datenschutz</a> · <a href="#" onclick="window.vrauenOpenCookieBanner();return false;">Cookie-Einstellungen</a></span>
     </div>
   </div>
 </footer>
@@ -266,6 +435,137 @@
   mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.remove('open')));
 
   loadEvents();
+</script>
+
+<script>
+  /* ---------- Cookie-Hinweis ---------- */
+  (function(){
+    const banner = document.getElementById('cookieBanner');
+    const acceptBtn = document.getElementById('cookieAcceptBtn');
+    const necessaryBtn = document.getElementById('cookieNecessaryBtn');
+    const rejectBtn = document.getElementById('cookieRejectBtn');
+    if (!banner || !acceptBtn || !necessaryBtn || !rejectBtn) return;
+    const STORAGE_KEY = 'vrauenCookieConsent';
+
+    function saveConsent(statistics){
+      const consent = { necessary: true, statistics: !!statistics, ts: Date.now() };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
+      banner.classList.remove('open');
+    }
+
+    // Von anderen Skripten abrufbar (z.B. bevor optionale Statistik-Skripte
+    // künftig geladen werden): window.vrauenHasStatisticsConsent()
+    window.vrauenHasStatisticsConsent = function(){
+      try {
+        const consent = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        return !!consent.statistics;
+      } catch (err) { return false; }
+    };
+
+    // Erlaubt es, die Cookie-Auswahl später erneut zu öffnen, z.B. über
+    // einen "Cookie-Einstellungen"-Link im Footer.
+    window.vrauenOpenCookieBanner = function(){
+      banner.classList.add('open');
+    };
+
+    if (!localStorage.getItem(STORAGE_KEY)){
+      setTimeout(() => banner.classList.add('open'), 400);
+    }
+
+    acceptBtn.addEventListener('click', () => saveConsent(true));
+    necessaryBtn.addEventListener('click', () => saveConsent(false));
+    rejectBtn.addEventListener('click', () => saveConsent(false));
+  })();
+
+  /* ---------- Barrierefreiheit ---------- */
+  (function(){
+    const html = document.documentElement;
+    const STORAGE_KEY = 'vrauenA11yPrefs';
+    const defaults = { textLevel: 0, contrast: false, readable: false, underline: false, motion: false };
+
+    function loadPrefs(){
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? { ...defaults, ...JSON.parse(raw) } : { ...defaults };
+      } catch (err) {
+        return { ...defaults };
+      }
+    }
+    function savePrefs(prefs){
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)); } catch (err) {}
+    }
+
+    function applyPrefs(prefs){
+      html.classList.remove('a11y-text-1', 'a11y-text-2', 'a11y-text-3');
+      if (prefs.textLevel > 0) html.classList.add('a11y-text-' + prefs.textLevel);
+      html.classList.toggle('a11y-contrast', !!prefs.contrast);
+      html.classList.toggle('a11y-readable', !!prefs.readable);
+      html.classList.toggle('a11y-underline', !!prefs.underline);
+      html.classList.toggle('a11y-motion', !!prefs.motion);
+
+      const contrastEl = document.getElementById('a11yContrast');
+      const readableEl = document.getElementById('a11yReadable');
+      const underlineEl = document.getElementById('a11yUnderline');
+      const motionEl = document.getElementById('a11yMotion');
+      if (contrastEl) contrastEl.checked = !!prefs.contrast;
+      if (readableEl) readableEl.checked = !!prefs.readable;
+      if (underlineEl) underlineEl.checked = !!prefs.underline;
+      if (motionEl) motionEl.checked = !!prefs.motion;
+    }
+
+    let prefs = loadPrefs();
+    applyPrefs(prefs);
+
+    const toggleBtn = document.getElementById('a11yToggle');
+    const panel = document.getElementById('a11yPanel');
+    const closeBtn = document.getElementById('a11yClose');
+    if (!toggleBtn || !panel) return;
+
+    function openPanel(){
+      panel.classList.add('open');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closePanel(){
+      panel.classList.remove('open');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    toggleBtn.addEventListener('click', () => {
+      panel.classList.contains('open') ? closePanel() : openPanel();
+    });
+    closeBtn.addEventListener('click', closePanel);
+    document.addEventListener('click', (e) => {
+      if (panel.classList.contains('open') && !panel.contains(e.target) && !toggleBtn.contains(e.target)){
+        closePanel();
+      }
+    });
+
+    document.querySelectorAll('[data-a11y]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.a11y;
+        if (action === 'text-increase') prefs.textLevel = Math.min(3, prefs.textLevel + 1);
+        if (action === 'text-decrease') prefs.textLevel = Math.max(0, prefs.textLevel - 1);
+        if (action === 'text-reset') prefs.textLevel = 0;
+        applyPrefs(prefs);
+        savePrefs(prefs);
+      });
+    });
+
+    const contrastEl = document.getElementById('a11yContrast');
+    const readableEl = document.getElementById('a11yReadable');
+    const underlineEl = document.getElementById('a11yUnderline');
+    const motionEl = document.getElementById('a11yMotion');
+    if (contrastEl) contrastEl.addEventListener('change', () => { prefs.contrast = contrastEl.checked; applyPrefs(prefs); savePrefs(prefs); });
+    if (readableEl) readableEl.addEventListener('change', () => { prefs.readable = readableEl.checked; applyPrefs(prefs); savePrefs(prefs); });
+    if (underlineEl) underlineEl.addEventListener('change', () => { prefs.underline = underlineEl.checked; applyPrefs(prefs); savePrefs(prefs); });
+    if (motionEl) motionEl.addEventListener('change', () => { prefs.motion = motionEl.checked; applyPrefs(prefs); savePrefs(prefs); });
+
+    const resetBtn = document.getElementById('a11yReset');
+    if (resetBtn) resetBtn.addEventListener('click', () => {
+      prefs = { ...defaults };
+      applyPrefs(prefs);
+      savePrefs(prefs);
+    });
+  })();
 </script>
 
 </body>
