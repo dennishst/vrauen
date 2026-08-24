@@ -139,6 +139,11 @@
   /* -------- Section spacing -------- */
   .section{padding:var(--gap-section) 0;}
   .section-head{max-width:640px;margin-bottom:40px;}
+  #team .section-head{max-width:none;}
+  #team .section-head h2{white-space:normal;}
+  @media (min-width:1050px){
+    #team .section-head h2{white-space:nowrap;}
+  }
   .section-head h2{font-size:clamp(25px,2.7vw,36px);margin-top:14px;line-height:1.2;}
   .section-head p.lede{margin-top:14px;font-size:15px;color:inherit;opacity:0.85;max-width:500px;}
 
@@ -1188,8 +1193,8 @@
         </div>
         <div class="footer-col">
           <h5>Community</h5>
-          <a href="#mitmachen">Newsletter</a>
-          <a href="#">VRauen-Padlet</a>
+          <a href="https://vrauen.makerport.de/newsletter" target="_blank" rel="noopener">Newsletter</a>
+          <a href="https://padlet.com/makerport/vrauen-netzwerk-m77e0rt7e8oymm6v" target="_blank" rel="noopener">VRauen-Padlet</a>
         </div>
       </div>
     </div>
