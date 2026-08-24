@@ -91,6 +91,17 @@
   .btn:disabled{opacity:0.5;cursor:not-allowed;}
   .btn-w-auto{width:auto;padding:12px 24px;}
   .login-error{color:var(--red);font-size:13px;margin-top:14px;display:none;}
+  .login-success{color:#1F6B36;font-size:13px;margin-top:14px;display:none;line-height:1.5;}
+  .pw-field-wrap{position:relative;}
+  .pw-field-wrap input{padding-right:44px;}
+  .pw-toggle{
+    position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;
+    padding:6px 8px;border-radius:8px;line-height:1;
+    color:var(--navy);opacity:0.65;display:flex;align-items:center;
+  }
+  .pw-toggle:hover{background:var(--pink-card);opacity:1;}
+  .pw-icon{width:19px;height:19px;}
 
   /* ---------- Dashboard ---------- */
   #dashboard{display:none;}
@@ -461,14 +472,62 @@
       </div>
       <div class="field">
         <label for="li-pass">Passwort</label>
-        <input type="password" id="li-pass" required autocomplete="current-password">
+        <div class="pw-field-wrap">
+          <input type="password" id="li-pass" required autocomplete="current-password">
+          <button type="button" class="pw-toggle" id="liPassToggle" aria-label="Passwort anzeigen"><svg class="pw-icon pw-icon-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg><svg class="pw-icon pw-icon-closed" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10.6 5.2C11.06 5.07 11.53 5 12 5c7 0 10.5 7 10.5 7-.6 1.2-1.6 2.7-3 4M6.5 6.6C3.9 8.3 1.5 12 1.5 12s3.5 7 10.5 7c1.3 0 2.5-.24 3.6-.66" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 10a3.2 3.2 0 0 0 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
       </div>
       <button type="submit" class="btn" id="loginBtn">Anmelden</button>
       <p class="login-error" id="loginError">E-Mail oder Passwort falsch.</p>
     </form>
-    <p style="text-align:center;margin-top:18px;font-size:12.5px;">
+    <p style="text-align:center;margin-top:14px;font-size:12.5px;">
+      <a href="#" id="forgotPasswordLink" style="text-decoration:underline;opacity:0.7;">Passwort vergessen?</a>
+    </p>
+    <p style="text-align:center;margin-top:10px;font-size:12.5px;">
       <a href="#" id="demoLink" style="text-decoration:underline;opacity:0.7;">Demo ansehen (mit Beispieldaten, ohne Login)</a>
     </p>
+  </div>
+
+  <!-- ===== PASSWORT VERGESSEN ===== -->
+  <div class="login-box" id="forgotBox" style="display:none;">
+    <h1>Passwort vergessen</h1>
+    <p class="sub">Gib deine E-Mail-Adresse ein — wir schicken dir einen Link zum Zurücksetzen.</p>
+    <form id="forgotForm">
+      <div class="field">
+        <label for="fp-email">E-Mail</label>
+        <input type="email" id="fp-email" required autocomplete="username">
+      </div>
+      <button type="submit" class="btn" id="forgotBtn">Link senden</button>
+      <p class="login-error" id="forgotError">Es gab ein Problem. Bitte versuch es erneut.</p>
+      <p class="login-success" id="forgotSuccess">Falls ein Konto mit dieser E-Mail existiert, haben wir dir einen Link zum Zurücksetzen geschickt. Bitte prüfe dein Postfach (auch den Spam-Ordner).</p>
+    </form>
+    <p style="text-align:center;margin-top:14px;font-size:12.5px;">
+      <a href="#" id="backToLoginLink" style="text-decoration:underline;opacity:0.7;">Zurück zur Anmeldung</a>
+    </p>
+  </div>
+
+  <!-- ===== NEUES PASSWORT SETZEN (nach Klick auf Link aus der E-Mail) ===== -->
+  <div class="login-box" id="resetBox" style="display:none;">
+    <h1>Neues Passwort setzen</h1>
+    <p class="sub">Vergib ein neues Passwort für dein Konto.</p>
+    <form id="resetForm">
+      <div class="field">
+        <label for="rp-pass">Neues Passwort</label>
+        <div class="pw-field-wrap">
+          <input type="password" id="rp-pass" required minlength="6" autocomplete="new-password">
+          <button type="button" class="pw-toggle" id="rpPassToggle" aria-label="Passwort anzeigen"><svg class="pw-icon pw-icon-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg><svg class="pw-icon pw-icon-closed" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10.6 5.2C11.06 5.07 11.53 5 12 5c7 0 10.5 7 10.5 7-.6 1.2-1.6 2.7-3 4M6.5 6.6C3.9 8.3 1.5 12 1.5 12s3.5 7 10.5 7c1.3 0 2.5-.24 3.6-.66" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 10a3.2 3.2 0 0 0 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="rp-pass2">Passwort wiederholen</label>
+        <div class="pw-field-wrap">
+          <input type="password" id="rp-pass2" required minlength="6" autocomplete="new-password">
+          <button type="button" class="pw-toggle" id="rpPass2Toggle" aria-label="Passwort anzeigen"><svg class="pw-icon pw-icon-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg><svg class="pw-icon pw-icon-closed" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;"><path d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10.6 5.2C11.06 5.07 11.53 5 12 5c7 0 10.5 7 10.5 7-.6 1.2-1.6 2.7-3 4M6.5 6.6C3.9 8.3 1.5 12 1.5 12s3.5 7 10.5 7c1.3 0 2.5-.24 3.6-.66" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 10a3.2 3.2 0 0 0 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <button type="submit" class="btn" id="resetBtn">Passwort speichern</button>
+      <p class="login-error" id="resetError">Es gab ein Problem. Bitte versuch es erneut.</p>
+    </form>
   </div>
 </div>
 
@@ -913,6 +972,16 @@
 
   /* ---------- Auth ---------- */
   async function checkSession(){
+    // Falls die Seite über den "Passwort vergessen"-Link aus der E-Mail
+    // aufgerufen wurde, NICHT das Dashboard zeigen, sondern das Formular
+    // zum Setzen eines neuen Passworts (unabhängig vom Timing des
+    // PASSWORD_RECOVERY-Events oben).
+    const isRecoveryLink = window.location.hash.includes('type=recovery')
+      || window.location.search.includes('type=recovery');
+    if (isRecoveryLink){
+      showResetBox();
+      return;
+    }
     const { data:{ session } } = await sb.auth.getSession();
     if (session){
       showDashboard(session.user.email);
@@ -1014,6 +1083,109 @@
     if (demoMode){ location.reload(); return; }
     await sb.auth.signOut();
     location.reload();
+  });
+
+  /* ---------- Passwort anzeigen/verbergen ---------- */
+  function wirePasswordToggle(inputId, btnId){
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    if (!input || !btn) return;
+    const iconOpen = btn.querySelector('.pw-icon-open');
+    const iconClosed = btn.querySelector('.pw-icon-closed');
+    btn.addEventListener('click', () => {
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      iconOpen.style.display = showing ? 'block' : 'none';
+      iconClosed.style.display = showing ? 'none' : 'block';
+      btn.setAttribute('aria-label', showing ? 'Passwort anzeigen' : 'Passwort verbergen');
+    });
+  }
+  wirePasswordToggle('li-pass', 'liPassToggle');
+  wirePasswordToggle('rp-pass', 'rpPassToggle');
+  wirePasswordToggle('rp-pass2', 'rpPass2Toggle');
+
+  /* ---------- Passwort vergessen ---------- */
+  const mainLoginBox = document.querySelector('#loginScreen > .login-box');
+  const forgotBox = document.getElementById('forgotBox');
+  const resetBox = document.getElementById('resetBox');
+
+  document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    mainLoginBox.style.display = 'none';
+    forgotBox.style.display = 'block';
+  });
+  document.getElementById('backToLoginLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    forgotBox.style.display = 'none';
+    mainLoginBox.style.display = 'block';
+  });
+
+  document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('fp-email').value.trim();
+    const btn = document.getElementById('forgotBtn');
+    const errorEl = document.getElementById('forgotError');
+    const successEl = document.getElementById('forgotSuccess');
+    errorEl.style.display = 'none';
+    successEl.style.display = 'none';
+    btn.disabled = true;
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    btn.disabled = false;
+    if (error){
+      errorEl.textContent = 'Es gab ein Problem: ' + error.message;
+      errorEl.style.display = 'block';
+      return;
+    }
+    successEl.style.display = 'block';
+    document.getElementById('forgotForm').reset();
+  });
+
+  /* ---------- Neues Passwort setzen (Link aus der E-Mail) ---------- */
+  function showResetBox(){
+    loginScreen.style.display = 'flex';
+    dashboard.style.display = 'none';
+    mainLoginBox.style.display = 'none';
+    forgotBox.style.display = 'none';
+    resetBox.style.display = 'block';
+  }
+
+  // Supabase löst dieses Event automatisch aus, wenn die Seite über den
+  // Zurücksetzen-Link aus der E-Mail aufgerufen wird.
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') showResetBox();
+  });
+
+  document.getElementById('resetForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pass1 = document.getElementById('rp-pass').value;
+    const pass2 = document.getElementById('rp-pass2').value;
+    const btn = document.getElementById('resetBtn');
+    const errorEl = document.getElementById('resetError');
+    errorEl.style.display = 'none';
+
+    if (pass1 !== pass2){
+      errorEl.textContent = 'Die beiden Passwörter stimmen nicht überein.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (pass1.length < 6){
+      errorEl.textContent = 'Das Passwort muss mindestens 6 Zeichen lang sein.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    const { error } = await sb.auth.updateUser({ password: pass1 });
+    btn.disabled = false;
+    if (error){
+      errorEl.textContent = 'Es gab ein Problem: ' + error.message;
+      errorEl.style.display = 'block';
+      return;
+    }
+    alert('Passwort erfolgreich geändert. Du kannst dich jetzt damit anmelden.');
+    window.location.href = window.location.origin + window.location.pathname;
   });
 
   /* ---------- Tabs ---------- */
