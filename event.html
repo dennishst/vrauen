@@ -574,9 +574,13 @@
 
     btn.disabled = true;
     try {
-      const { data: reg, error } = await sb.from('event_registrations').insert({
-        event_id: eventId, vorname, nachname: nachname || null, unternehmen: unternehmen || null, email: mail
-      }).select().single();
+      const { data: reg, error } = await sb.rpc('register_for_event', {
+        p_event_id: eventId,
+        p_vorname: vorname,
+        p_nachname: nachname || null,
+        p_unternehmen: unternehmen || null,
+        p_email: mail
+      });
       if (error) throw error;
 
       if (wantsNewsletter){
@@ -646,7 +650,7 @@
         if (!uploadError){
           const { data: urlData } = sb.storage.from('qr-codes').getPublicUrl(path);
           qrUrl = urlData.publicUrl;
-          await sb.from('event_registrations').update({ qr_url: qrUrl }).eq('id', reg.id);
+          await sb.rpc('set_registration_qr_url', { p_token: reg.checkin_token, p_qr_url: qrUrl });
         }
 
         await fetch(`${SUPABASE_URL}/functions/v1/send-event-confirmation`, {
