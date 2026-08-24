@@ -390,11 +390,7 @@
 
     if (!token){ content.innerHTML = notFoundHTML(); return; }
 
-    const { data: reg, error } = await sb
-      .from('event_registrations')
-      .select('*, events(name, datum, zeit, ort)')
-      .eq('checkin_token', token)
-      .maybeSingle();
+    const { data: reg, error } = await sb.rpc('get_registration_by_token', { p_token: token });
 
     if (error || !reg || !reg.events){ content.innerHTML = notFoundHTML(); return; }
 
