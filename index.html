@@ -281,11 +281,33 @@
   #nextEventTimelineSlot .t-connector .dot{background:var(--navy);color:var(--white);}
 
   /* -------- TESTIMONIALS -------- */
-  .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;}
-  .testi{padding:0 32px;border-left:1.5px solid rgba(20,63,100,0.12);}
-  .testi:first-child{border-left:none;padding-left:0;}
-  .testi p{font-size:14.5px;color:var(--navy);line-height:1.6;}
-  .testi footer{margin-top:14px;font-weight:800;font-size:13px;color:var(--navy);opacity:0.7;}
+  .testi-slider{display:flex;align-items:center;gap:16px;margin-top:8px;}
+  .testi-track{
+    display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+    scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;flex:1;
+  }
+  .testi-track::-webkit-scrollbar{display:none;}
+  .testi-slide{flex:0 0 100%;scroll-snap-align:start;padding:4px 10px;box-sizing:border-box;}
+  .testi{
+    background:var(--pink-card);border-radius:var(--r-lg);padding:32px 28px;
+    height:100%;display:flex;flex-direction:column;
+  }
+  .testi-photo{width:52px;height:52px;border-radius:50%;object-fit:cover;margin-bottom:16px;border:2.5px solid var(--white);box-shadow:0 6px 16px -8px rgba(20,63,100,0.35);cursor:pointer;}
+  .testi p{font-size:14.5px;color:var(--navy);line-height:1.6;flex:1;cursor:pointer;}
+  .testi footer{margin-top:14px;font-weight:800;font-size:13px;color:var(--navy);opacity:0.7;cursor:pointer;}
+  .testi-nav{
+    flex:none;width:44px;height:44px;border-radius:50%;border:1.5px solid var(--navy);
+    background:var(--white);color:var(--navy);font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:background .2s ease;
+  }
+  .testi-nav:hover{background:var(--pink-card);}
+  .testi-dots{display:flex;justify-content:center;gap:8px;margin-top:22px;}
+  .testi-dot{width:8px;height:8px;border-radius:50%;background:rgba(20,63,100,0.2);border:none;cursor:pointer;padding:0;transition:background .2s ease, width .2s ease;}
+  .testi-dot.active{background:var(--navy);width:22px;border-radius:5px;}
+  @media (min-width:900px){
+    .testi-slide{flex:0 0 33.333%;}
+  }
 
   /* -------- CTA / MITMACHEN -------- */
   .cta{background:var(--navy);border-radius:var(--r-lg);padding:52px 44px 48px;text-align:center;}
@@ -471,9 +493,6 @@
     .involve-grid{grid-template-columns:repeat(2,1fr);}
     .team-grid{grid-template-columns:repeat(3,1fr);}
     .partner-grid{grid-template-columns:1fr;}
-    .testi-grid{grid-template-columns:1fr;gap:32px;}
-    .testi{border-left:none;padding-left:0;padding-top:28px;border-top:1.5px solid rgba(20,63,100,0.12);}
-    .testi:first-child{border-top:none;padding-top:0;}
     .gallery-grid{grid-template-columns:repeat(3,1fr);grid-template-rows:auto;}
     .gtile{aspect-ratio:1/1;}
     .g1{grid-row:auto;grid-column:1/3;aspect-ratio:auto;}
@@ -508,9 +527,8 @@
     .t-connector .dot{width:40px;height:40px;font-size:15px;}
     .t-connector .line{top:40px;}
     .t-card{padding:16px 18px;}
-    .testi-grid{grid-template-columns:1fr;gap:28px;}
-    .testi{border-left:none;padding-left:0;padding-top:24px;border-top:1.5px solid rgba(20,63,100,0.15);}
-    .testi:first-child{border-top:none;padding-top:0;}
+    .testi-nav{width:36px;height:36px;font-size:16px;}
+    .testi{padding:26px 20px;}
     .cta{padding:36px 20px;border-radius:22px;}
     .cta h2{font-size:clamp(22px,6vw,30px);}
     .involve-grid{grid-template-columns:1fr;gap:16px;}
@@ -931,20 +949,34 @@
         <span class="eyebrow">Stimmen aus dem Netzwerk</span>
         <h2>Was Frauen bei VRauen erlebt haben.</h2>
       </div>
-      <div class="testi-grid reveal">
-        <div class="testi">
-          <p data-cms="testimonial_1_text">„Ich bin das erste Mal alleine hingegangen und kannte niemanden. Nach einer Stunde hatte ich drei Visitenkarten und zwei echte Gespräche. Das passiert mir sonst nie.“</p>
-          <footer data-cms="testimonial_1_author">— Teilnehmerin</footer>
+      <div class="testi-slider reveal">
+        <button class="testi-nav testi-prev" id="testiPrev" aria-label="Vorherige Stimme">‹</button>
+        <div class="testi-track" id="testiTrack">
+        <div class="testi-slide">
+          <div class="testi">
+            <img class="testi-photo" data-cms="testimonial_1_photo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAHTklEQVR4nO3dO1osNxCGYcHDEgiIcOTU+1+HU0cmImAPOOBpz9DTrdalJNXle2P7IJXq71IzHM5TwjQfn1/fUn/W+9vrk9SfhXMUWZBkAHoRIBkUsZGmMJQiNPUoWCGLgbhCYK5RoAyPoThDWI5RlJ1IoThDWG4oRCIUOdHDEnrzBKNc1KCE2zSh6BcpLGE2SjDkRQiK+w0SjPE8B8XtxgjGfB6D4m5DBGM9T0FxsxGCoY+HoDyvXoAEwqGTh3MxnXAPBxCF1WlictEEwy5rQTF3xSIctlk7P1MBsVZcHLN0jibGnaWCoo72K5f6CUI4fNN+vqoDor14kKH5nFWON80Fw1jarlzqJgjhiE3b+asKiLbiYA1NfaAmIJqKgvW09IOKgGgpBnTR0BfLA6KhCNBrdX8sDcjqzcOGlX2yLCCEAzVW9cuSgBAOtFjRN9MDQjjQY3b/TA0I4YCEmX00LSCEA5Jm9dOUgBAOjDCjr4YHhHBgpNH9NTQghAMzjOyzYQEhHJhpVL8t/1ETQLMhAWF6YIURfSceEMKBlaT7TzQghAMaSPYh7yBAhlhAmB7QRKofRQJCOKCRRF92/4oVwtHu73/+Lf5v//rzj4Er8a3nVwm9SC4EeTWBuPp/CcwcXROE6VGmJxhXCEqZ1inCBBlkZCjOvg5hkdf8ks70ODcrHFq+rgWt/do0dgjHMU0NyjQ5VnvV4oNCIZrCkZK+9VhVHRCmxyOtzah1XSvV9i8TpJP2JtS+Pu2qAsL0+M1K81lZ5yw1fcwEaWSt6aytV4vigDA9bqw2m9V1j1Daz0yQStabzPr6ZysKCNPjh5fm8rKPXiV9zQQBMi4DwvT44e2p620/ra76mwlSwGszed2XJAICZGQDwvUKEeT6nAlywfs1xPv+ep0GhOmBSM76nQmSEeXpGmWfLQgIkHEYEK5XiOio75kgQAYBORHtXh5tv6UeAsL1CpHt+58JAmQQECDjV0C4XgG/c8AEATIICJBBQICM/wPC+wdws+WBCQJkEBAgg4CciPbPB0TbbykCAmQ8p8QLOnDk4/PrmwkCZBCQjCj38ij7bEFAgAwCcsH709X7/noRECCDgAAZBKSA12uI131JeuYzkDLemsnbfkZhggAZBKSCl6eul33MQEAqWW8u6+ufjYA0sNpkVte9EgFpZK3ZrK1XCwLSwUrTWVmnRgSkk/bm074+7QiIAK1NqHVdlhAQIdqaUdt6rHrik3R5K/8pAYIhiwkywKomJRzymCATjJwohGIsAjKRZFAIxhwEZKGawBCINQgIkMFLOpBBQIAMAgJkPL+/vT6tXgSgFRMEyCAgQAYBATIICJBBQIAMAgJkEBAg4zmllPgsBHj0/vb6xAQBMl5WLyCinr8Xwo+9z0VABhrxNwnP/kyCMwYBEbTylzXsvzaBkfHr5Zy/PFVvZShKEZZ62zeumCCNLARjs62VoNQjIBUsheLI/foJSxkCUsB6MI4wVco8fEDIe8iNx2CcISg39x+c80HhiUjhSCnefktxxdqJ3Chcux49TJDIP5cVORz3Itdh3/9MkBS7Ic4wTX6EfwchHHnR63MYkCjXrOiHXypKnY76PuQVK8qBS4p65Qp3xSIcfaLV7zQgHq9Z0Q53FI91POv3MBPE46GuFKWe2YB4mSJRDnM2L3XN9bn7CeLlELXyXl/XAfF+eFp4rvNlQKxeszwfmkZW633V364nCNCrKCDWpojVp5l11upe0tfuJoi1Q/LGW/2LA2Jhing7HKssnENpP7ubIICkqoBoniIWnlqRaD6Pmj52MUE0H0ZkHs6lOiCapwhwpbZ/zU8QD08pz6yfT1NAtEwR68WPQss5tfRt8wTREhKgRGu/mr1iaXkqoYzV8+oKCFMEFvT0qckJYvVpFJ3Fc+sOCFMEmvX2p8gEISTQSKIvxa5Ys0JicUzjZtb5SfWjyXcQYBbRgIyeIkwPH0afo2Qfik8Q3kewknT/DbliERKsMKLvzLyDcL3yxcp5DgsIUwQzjeq3oROEkGCGkX02/IpFSDDS6P6a8g7Suwkr91XU6T3XGQ/faS/pTBJImtVPU7+LRUggYWYfTf82LyFBj9n9s+RzEEKCFiv6ZtkHhYQENVb1y9JP0ks2zXewfCs535UP0+U/asIkQc7q/lgekJTWFwE6aegLFQFJSUcxoIeWflATkJT0FAVraeoDVQFJSVdxMJ+2839ZvYAjW5E+Pr++V68Fc2gLxkbdBLmntWiQpfmc1S7sHpPEL83hSMlIQDYExQ/twdiovmLtWSkq8iydo6mApGSruHhk7fxMLXaPK5cd1oKxMbnoPYKil9VgbMxdsY5YPwSvPJyL+Q3sMU3W8xCMjZuN7BGU+TwFY+NuQ3sEZTyPwdi43dgeQZHnORgb9xvcIyj9IgRjE2ajRwhLuUihuBdy03sE5VzUYGxCb/4IYSEU9yhERqSwEIpjFKWQx7AQimsUqJHFwBCIehRMkKbQEAYZ/wF89BHGyejC3AAAAABJRU5ErkJggg==" alt="">
+            <p data-cms="testimonial_1_text">„Ich bin das erste Mal alleine hingegangen und kannte niemanden. Nach einer Stunde hatte ich drei Visitenkarten und zwei echte Gespräche. Das passiert mir sonst nie.“</p>
+            <footer data-cms="testimonial_1_author">— Teilnehmerin</footer>
+          </div>
         </div>
-        <div class="testi">
-          <p data-cms="testimonial_2_text">„Ich bin das erste Mal alleine hingegangen und kannte niemanden. Nach einer Stunde hatte ich drei Visitenkarten und zwei echte Gespräche. Das passiert mir sonst nie.“</p>
-          <footer data-cms="testimonial_2_author">— Teilnehmerin</footer>
+        <div class="testi-slide">
+          <div class="testi">
+            <img class="testi-photo" data-cms="testimonial_2_photo" src="data:image/png;base64,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" alt="">
+            <p data-cms="testimonial_2_text">„Ich bin das erste Mal alleine hingegangen und kannte niemanden. Nach einer Stunde hatte ich drei Visitenkarten und zwei echte Gespräche. Das passiert mir sonst nie.“</p>
+            <footer data-cms="testimonial_2_author">— Teilnehmerin</footer>
+          </div>
         </div>
-        <div class="testi">
-          <p data-cms="testimonial_3_text">„Ich bin das erste Mal alleine hingegangen und kannte niemanden. Nach einer Stunde hatte ich drei Visitenkarten und zwei echte Gespräche. Das passiert mir sonst nie.“</p>
-          <footer data-cms="testimonial_3_author">— Teilnehmerin</footer>
+        <div class="testi-slide">
+          <div class="testi">
+            <img class="testi-photo" data-cms="testimonial_3_photo" src="data:image/png;base64,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" alt="">
+            <p data-cms="testimonial_3_text">„Ich bin das erste Mal alleine hingegangen und kannte niemanden. Nach einer Stunde hatte ich drei Visitenkarten und zwei echte Gespräche. Das passiert mir sonst nie.“</p>
+            <footer data-cms="testimonial_3_author">— Teilnehmerin</footer>
+          </div>
         </div>
+        </div>
+        <button class="testi-nav testi-next" id="testiNext" aria-label="Nächste Stimme">›</button>
       </div>
+      <div class="testi-dots" id="testiDots"></div>
     </div>
   </section>
 
@@ -1491,6 +1523,69 @@
     }
   }
   applySiteContent();
+
+  /* ---------- Testimonial-Slider ---------- */
+  (function(){
+    const track = document.getElementById('testiTrack');
+    const dotsWrap = document.getElementById('testiDots');
+    const prevBtn = document.getElementById('testiPrev');
+    const nextBtn = document.getElementById('testiNext');
+    if (!track || !dotsWrap || !prevBtn || !nextBtn) return;
+
+    const slides = Array.from(track.children);
+    if (slides.length === 0) return;
+
+    slides.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'testi-dot';
+      dot.setAttribute('aria-label', 'Zu Stimme ' + (i + 1) + ' springen');
+      dot.addEventListener('click', () => scrollToSlide(i));
+      dotsWrap.appendChild(dot);
+    });
+    const dots = Array.from(dotsWrap.children);
+    if (slides.length < 2){
+      prevBtn.style.visibility = 'hidden';
+      nextBtn.style.visibility = 'hidden';
+    }
+
+    function slidesPerView(){
+      return window.innerWidth >= 900 ? 3 : 1;
+    }
+
+    function scrollToSlide(i){
+      const clamped = Math.max(0, Math.min(slides.length - 1, i));
+      const slide = slides[clamped];
+      if (!slide) return;
+      track.scrollTo({ left: slide.offsetLeft - track.offsetLeft, behavior: 'smooth' });
+    }
+
+    function closestSlideIndex(){
+      const trackLeft = track.getBoundingClientRect().left;
+      let closest = 0, closestDist = Infinity;
+      slides.forEach((slide, i) => {
+        const dist = Math.abs(slide.getBoundingClientRect().left - trackLeft);
+        if (dist < closestDist){ closestDist = dist; closest = i; }
+      });
+      return closest;
+    }
+
+    let currentIndex = 0;
+    function updateDots(){
+      currentIndex = closestSlideIndex();
+      dots.forEach((d, i) => d.classList.toggle('active', i === currentIndex));
+    }
+
+    let scrollTimeout;
+    track.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(updateDots, 100);
+    });
+
+    prevBtn.addEventListener('click', () => scrollToSlide(currentIndex - slidesPerView()));
+    nextBtn.addEventListener('click', () => scrollToSlide(currentIndex + slidesPerView()));
+
+    updateDots();
+  })();
 
   function escapeHTML(str){
     if(!str) return '';
