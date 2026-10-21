@@ -1736,12 +1736,15 @@
         .from('site_cards')
         .select('*')
         .order('sort_order', { ascending: true });
-      if (error || !data) return;
+      // Solange noch nie Karten angelegt wurden, bleibt das statische HTML.
+      // Sobald es Karten gibt, ist die Datenbank maßgeblich (auch für leere Bereiche).
+      if (error || !data || data.length === 0) return;
+      const inPreview = window.parent !== window; // Vorschau im Admin
 
       /* --- Rückblick / Speakerinnen --- */
       const rueckblick = data.filter(r => r.section === 'rueckblick');
       const timeline = document.querySelector('[data-cms-list="rueckblick"]');
-      if (timeline && rueckblick.length){
+      if (timeline){
         // Statische Karten entfernen, "Nächstes Treffen" (Slot bzw. blaue Karte) bleibt am Ende
         Array.from(timeline.children).forEach(child => {
           if (child.id === 'nextEventTimelineSlot') return;
@@ -1749,7 +1752,7 @@
           child.remove();
         });
         const html = rueckblick.map((c, i) => `
-          <div class="t-item">
+          <div class="t-item" data-card-id="${escapeHTML(c.id)}">
             <div class="t-connector"><div class="dot">${i + 1}</div><div class="line"></div></div>
             <div class="t-card">
               ${c.titel ? `<h3>${escapeHTML(c.titel)}</h3>` : ''}
@@ -1766,9 +1769,11 @@
       /* --- Stimmen aus dem Netzwerk --- */
       const stimmen = data.filter(r => r.section === 'stimmen');
       const track = document.querySelector('[data-cms-list="stimmen"]');
-      if (track && stimmen.length){
+      if (track){
+        const testiSection = track.closest('section');
+        if (testiSection) testiSection.style.display = (stimmen.length || inPreview) ? '' : 'none';
         track.innerHTML = stimmen.map(c => `
-          <div class="testi-slide">
+          <div class="testi-slide" data-card-id="${escapeHTML(c.id)}">
             <div class="testi">
               ${c.bild_url
                 ? `<img class="testi-photo" src="${escapeHTML(c.bild_url)}" alt="${escapeHTML(c.titel || '')}" loading="lazy" data-initials="${escapeHTML(initialsOf(c.titel))}" onerror="var d=document.createElement('div');d.className='testi-initials';d.textContent=this.dataset.initials;this.replaceWith(d);">`
