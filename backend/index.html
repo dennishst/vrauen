@@ -2633,6 +2633,7 @@
 
   document.getElementById('contentPreviewFrame').addEventListener('load', () => {
     wireUpContentPreview();
+    if (typeof maybeAutoImportCards === 'function') maybeAutoImportCards();
   });
 
   /* ============================================================
@@ -2703,6 +2704,9 @@
   let pendingCardFile = null;
   let cardDragState = null;
 
+  let cardsLoaded = false;
+  const cardsImporting = {};
+
   async function loadCards(){
     let rows;
     if (demoMode){
@@ -2712,7 +2716,7 @@
       if (error){
         Object.keys(CARD_SECTIONS).forEach(sec => {
           document.getElementById('cardsList-' + sec).innerHTML =
-            `<div class="cards-empty">Fehler beim Laden: ${escapeHTML(error.message)}<br>Ist die Tabelle <span class="content-key">site_cards</span> schon angelegt?</div>`;
+            `<div class="cards-empty"><b>Die Karten-Tabelle fehlt noch in Supabase.</b><br>Bitte die Datei <span class="content-key">site_cards.sql</span> einmal im Supabase SQL-Editor ausführen und danach diese Seite neu laden — dann erscheinen die bisherigen Karten hier automatisch.<br><span style="font-size:11px;opacity:0.7;">(${escapeHTML(error.message)})</span></div>`;
         });
         return;
       }
@@ -2723,6 +2727,8 @@
       if (cardsBySection[r.section]) cardsBySection[r.section].push(r);
     });
     Object.keys(CARD_SECTIONS).forEach(renderCardList);
+    cardsLoaded = true;
+    maybeAutoImportCards();
   }
 
   function renderCardList(section){
@@ -2731,7 +2737,7 @@
     document.getElementById('countCards-' + section).textContent = list.length;
     if (list.length === 0){
       el.innerHTML = `<div class="cards-empty">
-        Noch keine Karten im Dashboard. Die Website zeigt solange ihre bisherigen Karten unverändert an.<br><br>
+        ${cardsImporting[section] === 'running' ? '<b>Übernehme die bisherigen Karten von der Website…</b><br><br>' : 'Noch keine Karten im Dashboard. Die Website zeigt solange ihre bisherigen Karten unverändert an.<br><br>'}
         <button type="button" class="add-btn" onclick="importCardsFromWebsite('${section}')">Bisherige Karten von der Website übernehmen</button>
         <div style="font-size:11.5px;margin-top:10px;">Oder oben mit „+ Neue Karte" neu anfangen.</div>
       </div>`;
@@ -3022,9 +3028,21 @@
     return await res.blob();
   }
 
-  async function importCardsFromWebsite(section){
+  // Bereiche ohne Karten automatisch aus der Website befüllen, damit die
+  // vorhandenen Karten sofort im Admin auftauchen und bearbeitbar sind.
+  function maybeAutoImportCards(){
+    if (demoMode || !cardsLoaded) return;
+    Object.keys(CARD_SECTIONS).forEach(section => {
+      if (cardsBySection[section].length === 0 && !cardsImporting[section]){
+        importCardsFromWebsite(section, true);
+      }
+    });
+  }
+
+  async function importCardsFromWebsite(section, silent){
+    if (cardsImporting[section] === 'running') return;
     if (cardsBySection[section].length){
-      alert('In diesem Bereich gibt es bereits Karten.');
+      if (!silent) alert('In diesem Bereich gibt es bereits Karten.');
       return;
     }
     let doc;
@@ -3034,6 +3052,7 @@
     } catch (err) { doc = null; }
     const container = doc && doc.querySelector(`[data-cms-list="${section}"]`);
     if (!container){
+      if (silent) return; // Vorschau noch nicht geladen -> beim nächsten Laden erneut
       alert('Die Website-Vorschau ist noch nicht geladen oder enthält diesen Bereich nicht. Bitte „Vorschau neu laden" und erneut versuchen.');
       return;
     }
@@ -3063,8 +3082,11 @@
       });
     }
 
-    if (!rows.length){ alert('Keine Karten in der Vorschau gefunden.'); return; }
-    if (!confirm(`${rows.length} Karten aus der Website übernehmen? Danach kannst du sie hier bearbeiten, sortieren und löschen.`)) return;
+    if (!rows.length){ if (!silent) alert('Keine Karten in der Vorschau gefunden.'); return; }
+    if (!silent && !confirm(`${rows.length} Karten aus der Website übernehmen? Danach kannst du sie hier bearbeiten, sortieren und löschen.`)) return;
+
+    cardsImporting[section] = 'running';
+    try {
 
     const listEl = document.getElementById('cardsList-' + section);
     listEl.innerHTML = '<div class="loading">Übernehme Karten…</div>';
@@ -3094,13 +3116,20 @@
 
     if (demoMode){
       rows.forEach((r, i) => DEMO_CARDS.push({ id: 'dc-imp-' + Date.now() + '-' + i, ...r }));
-      loadCards();
       return;
     }
+
+    // Doppelte Übernahme verhindern (z.B. Admin in zwei Tabs offen)
+    const { count } = await sb.from('site_cards').select('*', { count: 'exact', head: true }).eq('section', section);
+    if (count > 0) return;
+
     const { error } = await sb.from('site_cards').insert(rows);
-    if (error){ alert('Fehler beim Übernehmen: ' + error.message); loadCards(); return; }
-    await loadCards();
+    if (error){ alert('Fehler beim Übernehmen der Karten: ' + error.message); return; }
     reloadContentPreview();
+    } finally {
+      cardsImporting[section] = 'done';
+      await loadCards();
+    }
   }
 
 
