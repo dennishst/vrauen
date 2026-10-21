@@ -266,6 +266,39 @@
   }
   .content-val{max-width:320px;font-size:13px;opacity:0.8;}
 
+  /* ---------- Inhalte: Kartenverwaltung (Rückblick / Stimmen) ---------- */
+  .cards-section{margin-top:34px;scroll-margin-top:20px;border-radius:22px;transition:box-shadow .3s ease;}
+  .cards-section.cards-flash{box-shadow:0 0 0 4px var(--pink-deep);}
+  .cards-section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .cards-section-head h3{font-size:18px;}
+  .cards-section-head p{font-size:12.5px;opacity:0.65;margin-top:2px;}
+  .cards-list{display:flex;flex-direction:column;gap:10px;}
+  .card-row{
+    display:flex;align-items:center;gap:14px;background:var(--white);border:1.5px solid transparent;
+    border-radius:16px;padding:12px 14px;box-shadow:0 12px 30px -22px rgba(20,63,100,0.35);
+    transition:border-color .15s ease, opacity .15s ease;
+  }
+  .card-row:hover{border-color:#E3E3E3;}
+  .card-row.dragging{opacity:0.4;}
+  .card-row.drop-before{border-top:3px solid var(--navy);}
+  .card-row.drop-after{border-bottom:3px solid var(--navy);}
+  .card-drag{cursor:grab;font-size:18px;opacity:0.35;user-select:none;padding:4px 2px;flex:none;}
+  .card-drag:active{cursor:grabbing;}
+  .card-pos{font-family:var(--display);font-weight:800;font-size:14px;opacity:0.4;width:20px;text-align:center;flex:none;}
+  .card-thumb{width:52px;height:52px;border-radius:12px;object-fit:cover;background:var(--pink-card);flex:none;}
+  .card-thumb.empty{display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.5;}
+  .card-info{flex:1;min-width:0;}
+  .card-info .t{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-info .s{font-size:12.5px;opacity:0.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-row-actions{display:flex;gap:6px;flex:none;align-items:center;}
+  .cards-empty{background:var(--white);border:1.5px dashed #D9D9D9;border-radius:16px;padding:28px;text-align:center;font-size:13px;opacity:0.65;}
+  .card-modal-box{max-width:560px;}
+  @media (max-width:760px){
+    .card-row{flex-wrap:wrap;}
+    .card-drag{display:none;}
+    .card-row-actions{width:100%;justify-content:flex-end;}
+  }
+
   /* ---------- Inhalte: Rich-Text + Vorschau ---------- */
   .ct-modal-box{max-width:640px;}
   .color-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
@@ -736,6 +769,30 @@
           <iframe id="contentPreviewFrame" src="/index.html" title="Website-Vorschau"></iframe>
         </div>
       </div>
+
+      <!-- ===== KARTEN: RÜCKBLICK / SPEAKERINNEN ===== -->
+      <div class="cards-section" id="cards-section-rueckblick">
+        <div class="cards-section-head">
+          <div>
+            <h3>Rückblick / Speakerinnen <span class="count-pill" id="countCards-rueckblick">0</span></h3>
+            <p>Alle Texte der Timeline bearbeiten (Überschrift, Text, Ort, Datum). Reihenfolge per Ziehen (☰) oder mit ↑ / ↓ ändern.</p>
+          </div>
+          <button class="add-btn" onclick="openCardModal('rueckblick')">+ Neue Karte</button>
+        </div>
+        <div class="cards-list" id="cardsList-rueckblick"><div class="loading">Lädt…</div></div>
+      </div>
+
+      <!-- ===== KARTEN: STIMMEN AUS DEM NETZWERK ===== -->
+      <div class="cards-section" id="cards-section-stimmen">
+        <div class="cards-section-head">
+          <div>
+            <h3>Stimmen aus dem Netzwerk <span class="count-pill" id="countCards-stimmen">0</span></h3>
+            <p>Neue Stimmen hinzufügen, bearbeiten, löschen oder umsortieren.</p>
+          </div>
+          <button class="add-btn" onclick="openCardModal('stimmen')">+ Neue Karte</button>
+        </div>
+        <div class="cards-list" id="cardsList-stimmen"><div class="loading">Lädt…</div></div>
+      </div>
     </div>
   </main>
 </div>
@@ -853,6 +910,24 @@
         <button type="button" class="small-btn danger" id="contentDeleteBtn" onclick="deleteContentFromModal()" style="display:none;margin-right:auto;">Feld löschen</button>
         <button type="button" class="btn btn-secondary" onclick="closeContentModal()">Abbrechen</button>
         <button type="submit" class="btn" id="contentSaveBtn">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== KARTE BEARBEITEN MODAL (Rückblick / Stimmen) ===== -->
+<div class="modal-overlay" id="cardModalOverlay">
+  <div class="modal-box card-modal-box">
+    <button class="modal-close" onclick="closeCardModal()" aria-label="Schließen">&times;</button>
+    <h3 id="cardModalTitle">Karte bearbeiten</h3>
+    <form id="cardForm">
+      <input type="hidden" id="cd-id">
+      <input type="hidden" id="cd-section">
+      <div id="cardFormFields"></div>
+      <div class="modal-actions">
+        <button type="button" class="small-btn danger" id="cardDeleteBtn" onclick="deleteCardFromModal()" style="display:none;margin-right:auto;">Karte löschen</button>
+        <button type="button" class="btn btn-secondary" onclick="closeCardModal()">Abbrechen</button>
+        <button type="submit" class="btn" id="cardSaveBtn">Speichern</button>
       </div>
     </form>
   </div>
@@ -1002,6 +1077,7 @@
     loadNewsletters();
     loadEvents();
     loadContent();
+    loadCards();
   }
 
   /* ---------- Demo-Daten ---------- */
@@ -1056,6 +1132,7 @@
     renderNewsletterLists();
     renderEvents(DEMO_EVENTS);
     renderContent(DEMO_CONTENT);
+    loadCards();
     renderOverview({
       confirmedSubs: DEMO_SUBSCRIBERS.filter(s => s.status === 'bestaetigt').length,
       unreadSubm: DEMO_SUBMISSIONS.filter(s => !s.read).length,
@@ -2519,11 +2596,36 @@
           if (confirm(`Für "${key}" gibt es noch kein Inhalte-Feld. Jetzt anlegen?`)){
             openContentModal();
             document.getElementById('ct-key').value = key;
+            document.getElementById('ct-label').value = key;
+            // Aktuellen Inhalt der Website als Startwert übernehmen
+            if (el.tagName === 'IMG'){
+              document.getElementById('ct-type').value = 'image';
+              document.getElementById('ct-type').dispatchEvent(new Event('change'));
+            } else {
+              ctRichtext.innerHTML = el.innerHTML;
+              updateCtPreview();
+            }
           }
           return;
         }
         openContentModal(row);
       }, true);
+    });
+
+    // Karten-Bereiche (Rückblick / Stimmen): Klick in der Vorschau springt
+    // zur passenden Kartenverwaltung unterhalb der Vorschau.
+    doc.querySelectorAll('[data-cms-list]').forEach(el => {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const section = el.getAttribute('data-cms-list');
+        const target = document.getElementById('cards-section-' + section);
+        if (target){
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          target.classList.add('cards-flash');
+          setTimeout(() => target.classList.remove('cards-flash'), 1400);
+        }
+      });
     });
 
     contentPreviewWired = true;
@@ -2532,6 +2634,474 @@
   document.getElementById('contentPreviewFrame').addEventListener('load', () => {
     wireUpContentPreview();
   });
+
+  /* ============================================================
+     KARTEN: Rückblick / Speakerinnen + Stimmen aus dem Netzwerk
+     Tabelle: site_cards (section, sort_order, titel, untertitel,
+     text, ort, datum, bild_url) — SQL siehe site_cards.sql
+     ============================================================ */
+  const CARD_SECTIONS = {
+    rueckblick: {
+      label: 'Rückblick / Speakerinnen',
+      emptyIcon: '🎤',
+      fields: [
+        { col:'titel', label:'Überschrift (Name der Speakerin / Anlass) *', type:'text', required:true, placeholder:'z.B. Judith Dada' },
+        { col:'text',  label:'Text', type:'richtext', hint:'Text markieren und auf B klicken, um ihn fett zu machen (z.B. das Thema).' },
+        { col:'ort',   label:'Ort', type:'text', placeholder:'z.B. Festsaal Stralsund' },
+        { col:'datum', label:'Datum', type:'text', placeholder:'z.B. 24.02.2026' }
+      ]
+    },
+    stimmen: {
+      label: 'Stimmen aus dem Netzwerk',
+      emptyIcon: '❝',
+      fields: [
+        { col:'text',       label:'Zitat *', type:'textarea', required:true, placeholder:'Was hat sie bei VRauen erlebt? (Anführungszeichen werden automatisch ergänzt)' },
+        { col:'titel',      label:'Name *', type:'text', required:true, placeholder:'z.B. Teilnehmerin oder Karen H.' },
+        { col:'untertitel', label:'Rolle / Unternehmen', type:'text', placeholder:'optional, z.B. Gründerin aus Stralsund' },
+        { col:'bild_url',   label:'Foto (optional — ohne Foto werden Initialen gezeigt)', type:'image' }
+      ]
+    }
+  };
+
+  const DEMO_CARDS = [
+    { id:'dc-1', section:'rueckblick', sort_order:10, titel:'Auftaktveranstaltung', text:'Der Start von VRauen, mit dem Grußwort von <b>Anna Kassautzki.</b>', ort:'MakerPort Stralsund', datum:'14.09.2023' },
+    { id:'dc-2', section:'rueckblick', sort_order:20, titel:'Judith Dada', text:'<b>KI-Investorin</b>, wie Künstliche Intelligenz die Welt verändert und was du jetzt tun kannst.', ort:'Strandhaus Altefähr', datum:'24.02.2026' },
+    { id:'dc-3', section:'stimmen', sort_order:10, titel:'Teilnehmerin', untertitel:null, text:'Ich bin das erste Mal alleine hingegangen und kannte niemanden.', bild_url:null }
+  ];
+
+  // Nur fett/kursiv/Zeilenumbrüche behalten (gleiche Regel wie auf der Website)
+  function sanitizeCardRichText(html){
+    const tpl = document.createElement('template');
+    tpl.innerHTML = String(html || '');
+    const ALLOWED = { B:'b', STRONG:'b', I:'i', EM:'i', BR:'br' };
+    function walk(node){
+      let out = '';
+      node.childNodes.forEach(child => {
+        if (child.nodeType === Node.TEXT_NODE){
+          out += escapeHTML(child.textContent);
+        } else if (child.nodeType === Node.ELEMENT_NODE){
+          const tag = ALLOWED[child.tagName];
+          if (tag === 'br') out += '<br>';
+          else if (tag) out += `<${tag}>${walk(child)}</${tag}>`;
+          else if (child.tagName === 'DIV' || child.tagName === 'P') out += (out ? '<br>' : '') + walk(child);
+          else out += walk(child);
+        }
+      });
+      return out;
+    }
+    return walk(tpl.content).replace(/(<br>)+$/, '').trim();
+  }
+
+  function cardRichCmd(cmd){
+    const ed = document.getElementById('cd-text-rich');
+    if (!ed) return;
+    ed.focus();
+    document.execCommand(cmd, false, null);
+  }
+
+  let cardsBySection = { rueckblick: [], stimmen: [] };
+  let pendingCardFile = null;
+  let cardDragState = null;
+
+  async function loadCards(){
+    let rows;
+    if (demoMode){
+      rows = DEMO_CARDS;
+    } else {
+      const { data, error } = await sb.from('site_cards').select('*').order('sort_order', { ascending: true });
+      if (error){
+        Object.keys(CARD_SECTIONS).forEach(sec => {
+          document.getElementById('cardsList-' + sec).innerHTML =
+            `<div class="cards-empty">Fehler beim Laden: ${escapeHTML(error.message)}<br>Ist die Tabelle <span class="content-key">site_cards</span> schon angelegt?</div>`;
+        });
+        return;
+      }
+      rows = data;
+    }
+    cardsBySection = { rueckblick: [], stimmen: [] };
+    rows.slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(r => {
+      if (cardsBySection[r.section]) cardsBySection[r.section].push(r);
+    });
+    Object.keys(CARD_SECTIONS).forEach(renderCardList);
+  }
+
+  function renderCardList(section){
+    const list = cardsBySection[section];
+    const el = document.getElementById('cardsList-' + section);
+    document.getElementById('countCards-' + section).textContent = list.length;
+    if (list.length === 0){
+      el.innerHTML = `<div class="cards-empty">
+        Noch keine Karten im Dashboard. Die Website zeigt solange ihre bisherigen Karten unverändert an.<br><br>
+        <button type="button" class="add-btn" onclick="importCardsFromWebsite('${section}')">Bisherige Karten von der Website übernehmen</button>
+        <div style="font-size:11.5px;margin-top:10px;">Oder oben mit „+ Neue Karte" neu anfangen.</div>
+      </div>`;
+      return;
+    }
+    const icon = CARD_SECTIONS[section].emptyIcon;
+    el.innerHTML = list.map((c, i) => `
+      <div class="card-row" draggable="true" data-id="${escapeHTML(c.id)}" data-section="${section}" data-index="${i}">
+        <span class="card-drag" title="Ziehen zum Verschieben">☰</span>
+        <span class="card-pos">${i + 1}</span>
+        ${c.bild_url
+          ? `<img class="card-thumb" src="${escapeHTML(c.bild_url)}" alt="">`
+          : `<div class="card-thumb empty">${icon}</div>`}
+        <div class="card-info">
+          <div class="t">${escapeHTML(c.titel || '(ohne Namen)')}</div>
+          <div class="s">${escapeHTML(section === 'stimmen'
+            ? (c.text ? '„' + c.text.slice(0, 90) + (c.text.length > 90 ? '…' : '') + '"' : '')
+            : [c.ort, c.datum].filter(Boolean).join(' · ') || stripHtml(c.text || '').slice(0, 90))}</div>
+        </div>
+        <div class="card-row-actions">
+          <button type="button" class="icon-btn" onclick="moveCard('${section}', ${i}, -1)" title="Nach oben" ${i === 0 ? 'disabled style="opacity:0.3;cursor:default;"' : ''}>↑</button>
+          <button type="button" class="icon-btn" onclick="moveCard('${section}', ${i}, 1)" title="Nach unten" ${i === list.length - 1 ? 'disabled style="opacity:0.3;cursor:default;"' : ''}>↓</button>
+          <button type="button" class="small-btn" onclick="openCardModalById('${section}', ${i})">Bearbeiten</button>
+          <button type="button" class="small-btn danger" onclick="deleteCard('${section}', ${i})">Löschen</button>
+        </div>
+      </div>
+    `).join('');
+    wireCardDrag(el, section);
+  }
+
+  /* ---------- Reihenfolge: Ziehen & Ablegen (Desktop) ---------- */
+  function wireCardDrag(listEl, section){
+    listEl.querySelectorAll('.card-row').forEach(row => {
+      row.addEventListener('dragstart', (e) => {
+        cardDragState = { section, from: Number(row.dataset.index) };
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', row.dataset.id); } catch (_) {}
+      });
+      row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+        listEl.querySelectorAll('.card-row').forEach(r => r.classList.remove('drop-before', 'drop-after'));
+        cardDragState = null;
+      });
+      row.addEventListener('dragover', (e) => {
+        if (!cardDragState || cardDragState.section !== section) return;
+        e.preventDefault();
+        const rect = row.getBoundingClientRect();
+        const after = e.clientY > rect.top + rect.height / 2;
+        listEl.querySelectorAll('.card-row').forEach(r => r.classList.remove('drop-before', 'drop-after'));
+        row.classList.add(after ? 'drop-after' : 'drop-before');
+      });
+      row.addEventListener('drop', (e) => {
+        if (!cardDragState || cardDragState.section !== section) return;
+        e.preventDefault();
+        const rect = row.getBoundingClientRect();
+        const after = e.clientY > rect.top + rect.height / 2;
+        const from = cardDragState.from;
+        let to = Number(row.dataset.index) + (after ? 1 : 0);
+        if (from < to) to -= 1;
+        if (from !== to) reorderCards(section, from, to);
+      });
+    });
+  }
+
+  function moveCard(section, i, dir){
+    const j = i + dir;
+    if (j < 0 || j >= cardsBySection[section].length) return;
+    reorderCards(section, i, j);
+  }
+
+  async function reorderCards(section, from, to){
+    const list = cardsBySection[section];
+    const [item] = list.splice(from, 1);
+    list.splice(to, 0, item);
+    list.forEach((c, idx) => { c.sort_order = (idx + 1) * 10; });
+    renderCardList(section); // sofort anzeigen, dann speichern
+
+    if (demoMode) return;
+
+    // Nur id/section/sort_order schicken: Upsert aktualisiert gezielt diese Spalten.
+    const { error } = await sb.from('site_cards').upsert(
+      list.map(c => ({ id: c.id, section: c.section, sort_order: c.sort_order })),
+      { onConflict: 'id' }
+    );
+    if (error){
+      alert('Reihenfolge konnte nicht gespeichert werden: ' + error.message);
+      loadCards();
+      return;
+    }
+    reloadContentPreview();
+  }
+
+  /* ---------- Karte anlegen / bearbeiten ---------- */
+  const cardModalOverlay = document.getElementById('cardModalOverlay');
+  const cardForm = document.getElementById('cardForm');
+
+  function openCardModalById(section, i){
+    openCardModal(section, cardsBySection[section][i]);
+  }
+
+  function openCardModal(section, row){
+    pendingCardFile = null;
+    const cfg = CARD_SECTIONS[section];
+    document.getElementById('cardModalTitle').textContent = (row ? 'Karte bearbeiten' : 'Neue Karte') + ' — ' + cfg.label;
+    document.getElementById('cd-id').value = row ? row.id : '';
+    document.getElementById('cd-section').value = section;
+
+    document.getElementById('cardFormFields').innerHTML = cfg.fields.map(f => {
+      const val = row ? (row[f.col] || '') : '';
+      if (f.type === 'image'){
+        return `<div class="field">
+          <label>${f.label}</label>
+          <img id="cd-img-preview" class="img-preview" src="${escapeHTML(val)}" style="${val ? '' : 'display:none;'}">
+          <label class="img-upload">
+            <span id="cd-img-upload-text">${val ? 'Bild ändern…' : 'Bild auswählen…'}</span>
+            <input type="file" id="cd-bild" accept="image/*" style="display:none;">
+          </label>
+          <input type="hidden" id="cd-${f.col}" value="${escapeHTML(val)}">
+          ${val ? `<p class="field-hint"><a href="#" onclick="removeCardImage(event)">Bild entfernen</a></p>` : ''}
+        </div>`;
+      }
+      if (f.type === 'richtext'){
+        return `<div class="field"><label>${f.label}</label>
+          <div class="color-toolbar">
+            <button type="button" class="color-swatch-reset" onmousedown="event.preventDefault()" onclick="cardRichCmd('bold')" title="Fett"><b>B</b></button>
+            <button type="button" class="color-swatch-reset" onmousedown="event.preventDefault()" onclick="cardRichCmd('italic')" title="Kursiv"><i>I</i></button>
+            <button type="button" class="color-swatch-reset" onmousedown="event.preventDefault()" onclick="cardRichCmd('removeFormat')">Formatierung entfernen</button>
+          </div>
+          <div id="cd-text-rich" class="richtext-editor" contenteditable="true">${sanitizeCardRichText(val)}</div>
+          ${f.hint ? `<p class="field-hint">${f.hint}</p>` : ''}</div>`;
+      }
+      if (f.type === 'textarea'){
+        return `<div class="field"><label for="cd-${f.col}">${f.label}</label>
+          <textarea id="cd-${f.col}" ${f.required ? 'required' : ''} placeholder="${escapeHTML(f.placeholder || '')}" style="min-height:110px;">${escapeHTML(val)}</textarea></div>`;
+      }
+      return `<div class="field"><label for="cd-${f.col}">${f.label}</label>
+        <input type="${f.type === 'url' ? 'url' : 'text'}" id="cd-${f.col}" value="${escapeHTML(val)}" ${f.required ? 'required' : ''} placeholder="${escapeHTML(f.placeholder || '')}"></div>`;
+    }).join('');
+
+    const fileInput = document.getElementById('cd-bild');
+    if (fileInput){
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        pendingCardFile = file;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const prev = document.getElementById('cd-img-preview');
+          prev.src = reader.result;
+          prev.style.display = 'block';
+          document.getElementById('cd-img-upload-text').textContent = file.name + ' — klicken zum Ändern';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const delBtn = document.getElementById('cardDeleteBtn');
+    delBtn.style.display = row ? 'inline-flex' : 'none';
+    cardModalOverlay.classList.add('open');
+  }
+
+  function removeCardImage(e){
+    e.preventDefault();
+    pendingCardFile = null;
+    document.getElementById('cd-bild_url').value = '';
+    const prev = document.getElementById('cd-img-preview');
+    prev.style.display = 'none';
+    prev.removeAttribute('src');
+    document.getElementById('cd-img-upload-text').textContent = 'Bild auswählen…';
+    e.target.parentElement.style.display = 'none';
+  }
+
+  function closeCardModal(){
+    cardModalOverlay.classList.remove('open');
+    cardForm.reset();
+    document.getElementById('cardFormFields').innerHTML = '';
+    pendingCardFile = null;
+  }
+  cardModalOverlay.addEventListener('click', (e) => { if (e.target === cardModalOverlay) closeCardModal(); });
+
+  cardForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('cd-id').value;
+    const section = document.getElementById('cd-section').value;
+    const saveBtn = document.getElementById('cardSaveBtn');
+    saveBtn.disabled = true;
+
+    const payload = { section };
+    CARD_SECTIONS[section].fields.forEach(f => {
+      if (f.type === 'richtext'){
+        const ed = document.getElementById('cd-text-rich');
+        payload[f.col] = ed ? (sanitizeCardRichText(ed.innerHTML) || null) : null;
+        return;
+      }
+      const input = document.getElementById('cd-' + f.col);
+      payload[f.col] = input ? (input.value.trim() || null) : null;
+    });
+    const missing = CARD_SECTIONS[section].fields.find(f => f.required && !payload[f.col]);
+    if (missing){
+      alert('Bitte ausfüllen: ' + missing.label.replace(' *', ''));
+      saveBtn.disabled = false;
+      return;
+    }
+
+    // Bild hochladen (bzw. im Demo-Modus als Data-URL übernehmen)
+    if (pendingCardFile){
+      if (demoMode){
+        payload.bild_url = document.getElementById('cd-img-preview').src;
+      } else {
+        const filePath = `cards-${section}-${Date.now()}-${pendingCardFile.name}`;
+        const { error: uploadError } = await sb.storage.from('site-images').upload(filePath, pendingCardFile, { upsert: true });
+        if (uploadError){
+          alert('Fehler beim Bild-Upload: ' + uploadError.message);
+          saveBtn.disabled = false;
+          return;
+        }
+        payload.bild_url = sb.storage.from('site-images').getPublicUrl(filePath).data.publicUrl;
+      }
+    }
+
+    const list = cardsBySection[section];
+    if (!id){
+      // Neue Karten landen am Ende der Liste
+      payload.sort_order = list.length ? Math.max(...list.map(c => c.sort_order || 0)) + 10 : 10;
+    }
+
+    if (demoMode){
+      if (id){
+        const idx = DEMO_CARDS.findIndex(c => c.id === id);
+        if (idx > -1) DEMO_CARDS[idx] = { ...DEMO_CARDS[idx], ...payload };
+      } else {
+        DEMO_CARDS.push({ id: 'dc-' + Date.now(), ...payload });
+      }
+      saveBtn.disabled = false;
+      closeCardModal();
+      loadCards();
+      return;
+    }
+
+    payload.updated_at = new Date().toISOString();
+    let error;
+    if (id){
+      ({ error } = await sb.from('site_cards').update(payload).eq('id', id));
+    } else {
+      ({ error } = await sb.from('site_cards').insert(payload));
+    }
+    saveBtn.disabled = false;
+    if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
+    closeCardModal();
+    await loadCards();
+    reloadContentPreview();
+  });
+
+  /* ---------- Karte löschen ---------- */
+  async function deleteCard(section, i){
+    const card = cardsBySection[section][i];
+    if (!card) return false;
+    if (!confirm(`Karte „${card.titel || 'ohne Namen'}" wirklich löschen? Sie verschwindet dann von der Website.`)) return false;
+    if (demoMode){
+      const idx = DEMO_CARDS.findIndex(c => c.id === card.id);
+      if (idx > -1) DEMO_CARDS.splice(idx, 1);
+      loadCards();
+      return true;
+    }
+    const { error } = await sb.from('site_cards').delete().eq('id', card.id);
+    if (error){ alert('Fehler beim Löschen: ' + error.message); return false; }
+    await loadCards();
+    reloadContentPreview();
+    return true;
+  }
+
+  async function deleteCardFromModal(){
+    const id = document.getElementById('cd-id').value;
+    const section = document.getElementById('cd-section').value;
+    const i = cardsBySection[section].findIndex(c => c.id === id);
+    if (i < 0) return;
+    const ok = await deleteCard(section, i);
+    if (ok) closeCardModal();
+  }
+
+  /* ---------- Bisherige Karten aus der Website-Vorschau übernehmen ----------
+     Liest die statischen Karten aus der eingebetteten index.html (gleiche
+     Domain), lädt eingebettete Fotos in den Storage hoch und legt sie als
+     site_cards an. Nur möglich, solange der Bereich noch leer ist. */
+  async function dataUrlToBlob(url){
+    const res = await fetch(url);
+    return await res.blob();
+  }
+
+  async function importCardsFromWebsite(section){
+    if (cardsBySection[section].length){
+      alert('In diesem Bereich gibt es bereits Karten.');
+      return;
+    }
+    let doc;
+    try {
+      const frame = document.getElementById('contentPreviewFrame');
+      doc = frame.contentDocument || frame.contentWindow.document;
+    } catch (err) { doc = null; }
+    const container = doc && doc.querySelector(`[data-cms-list="${section}"]`);
+    if (!container){
+      alert('Die Website-Vorschau ist noch nicht geladen oder enthält diesen Bereich nicht. Bitte „Vorschau neu laden" und erneut versuchen.');
+      return;
+    }
+
+    const rows = [];
+    if (section === 'rueckblick'){
+      container.querySelectorAll(':scope > .t-item').forEach(item => {
+        if (item.querySelector('.next-event')) return; // automatische "Nächstes Treffen"-Karte
+        const h3 = item.querySelector('.t-card h3');
+        const p = item.querySelector('.t-card p');
+        let ort = null, datum = null;
+        item.querySelectorAll('.t-meta span').forEach(sp => {
+          const t = sp.textContent.trim();
+          if (t.startsWith('📍')) ort = t.replace('📍', '').trim();
+          else if (t.startsWith('🗓')) datum = t.replace(/^🗓️?/, '').trim();
+        });
+        rows.push({ titel: h3 ? h3.textContent.trim() : null, text: p ? sanitizeCardRichText(p.innerHTML) : null, ort, datum });
+      });
+    } else {
+      container.querySelectorAll('.testi').forEach(t => {
+        const p = t.querySelector('p');
+        const footer = t.querySelector('footer');
+        const img = t.querySelector('img.testi-photo');
+        const text = p ? p.textContent.trim().replace(/^[„"“»]\s*/, '').replace(/\s*[“"«”]$/, '') : null;
+        const name = footer ? footer.textContent.trim().replace(/^[—–-]\s*/, '') : null;
+        rows.push({ text, titel: name, untertitel: null, _img: img ? img.getAttribute('src') : null });
+      });
+    }
+
+    if (!rows.length){ alert('Keine Karten in der Vorschau gefunden.'); return; }
+    if (!confirm(`${rows.length} Karten aus der Website übernehmen? Danach kannst du sie hier bearbeiten, sortieren und löschen.`)) return;
+
+    const listEl = document.getElementById('cardsList-' + section);
+    listEl.innerHTML = '<div class="loading">Übernehme Karten…</div>';
+
+    for (let i = 0; i < rows.length; i++){
+      const r = rows[i];
+      r.section = section;
+      r.sort_order = (i + 1) * 10;
+      if (section === 'stimmen'){
+        r.bild_url = null;
+        if (r._img){
+          if (demoMode || /^https?:/i.test(r._img)){
+            r.bild_url = r._img;
+          } else {
+            try {
+              const blob = await dataUrlToBlob(r._img);
+              const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+              const filePath = `cards-stimmen-import-${Date.now()}-${i + 1}.${ext}`;
+              const { error: upErr } = await sb.storage.from('site-images').upload(filePath, blob, { upsert: true, contentType: blob.type });
+              if (!upErr) r.bild_url = sb.storage.from('site-images').getPublicUrl(filePath).data.publicUrl;
+            } catch (err) { console.error('Foto-Import fehlgeschlagen:', err); }
+          }
+        }
+      }
+      delete r._img;
+    }
+
+    if (demoMode){
+      rows.forEach((r, i) => DEMO_CARDS.push({ id: 'dc-imp-' + Date.now() + '-' + i, ...r }));
+      loadCards();
+      return;
+    }
+    const { error } = await sb.from('site_cards').insert(rows);
+    if (error){ alert('Fehler beim Übernehmen: ' + error.message); loadCards(); return; }
+    await loadCards();
+    reloadContentPreview();
+  }
 
 
   const contentModalOverlay = document.getElementById('contentModalOverlay');
