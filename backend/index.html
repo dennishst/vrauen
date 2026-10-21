@@ -2612,21 +2612,8 @@
       }, true);
     });
 
-    // Karten-Bereiche (Rückblick / Stimmen): Klick in der Vorschau springt
-    // zur passenden Kartenverwaltung unterhalb der Vorschau.
-    doc.querySelectorAll('[data-cms-list]').forEach(el => {
-      el.style.cursor = 'pointer';
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        const section = el.getAttribute('data-cms-list');
-        const target = document.getElementById('cards-section-' + section);
-        if (target){
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          target.classList.add('cards-flash');
-          setTimeout(() => target.classList.remove('cards-flash'), 1400);
-        }
-      });
-    });
+    // Karten (Rückblick / Stimmen) direkt in der Vorschau bearbeitbar machen
+    decoratePreviewCards();
 
     contentPreviewWired = true;
   }
@@ -2705,6 +2692,7 @@
   let cardDragState = null;
 
   let cardsLoaded = false;
+  let cardsTotal = 0;
   const cardsImporting = {};
 
   async function loadCards(){
@@ -2716,18 +2704,22 @@
       if (error){
         Object.keys(CARD_SECTIONS).forEach(sec => {
           document.getElementById('cardsList-' + sec).innerHTML =
-            `<div class="cards-empty"><b>Die Karten-Tabelle fehlt noch in Supabase.</b><br>Bitte die Datei <span class="content-key">site_cards.sql</span> einmal im Supabase SQL-Editor ausführen und danach diese Seite neu laden — dann erscheinen die bisherigen Karten hier automatisch.<br><span style="font-size:11px;opacity:0.7;">(${escapeHTML(error.message)})</span></div>`;
+            /permission denied/i.test(error.message)
+            ? `<div class="cards-empty"><b>Supabase verweigert den Zugriff auf die Karten-Tabelle.</b><br>Die Tabelle ist angelegt, aber die Rechte fehlen. Bitte den Abschnitt „Rechte“ aus <span class="content-key">site_cards.sql</span> im SQL-Editor ausführen und diese Seite neu laden.<br><span style="font-size:11px;opacity:0.7;">(${escapeHTML(error.message)})</span></div>`
+            : `<div class="cards-empty"><b>Die Karten-Tabelle fehlt noch in Supabase.</b><br>Bitte die Datei <span class="content-key">site_cards.sql</span> einmal im Supabase SQL-Editor ausführen und danach diese Seite neu laden — dann erscheinen die bisherigen Karten hier automatisch.<br><span style="font-size:11px;opacity:0.7;">(${escapeHTML(error.message)})</span></div>`;
         });
         return;
       }
       rows = data;
     }
+    cardsTotal = rows.length;
     cardsBySection = { rueckblick: [], stimmen: [] };
     rows.slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(r => {
       if (cardsBySection[r.section]) cardsBySection[r.section].push(r);
     });
     Object.keys(CARD_SECTIONS).forEach(renderCardList);
     cardsLoaded = true;
+    decoratePreviewCards();
     maybeAutoImportCards();
   }
 
@@ -2766,6 +2758,121 @@
       </div>
     `).join('');
     wireCardDrag(el, section);
+  }
+
+  /* ---------- Bearbeiten direkt in der Website-Vorschau ----------
+     Jede Karte bekommt in der Vorschau eine kleine Leiste:
+     ↑ ↓ (bzw. ← → im Stimmen-Slider) zum Verschieben, ✕ zum Löschen.
+     Klick auf die Karte öffnet den Editor. „+ Neue Karte" unter dem Bereich. */
+  function getPreviewDoc(){
+    try {
+      const frame = document.getElementById('contentPreviewFrame');
+      return frame.contentDocument || frame.contentWindow.document;
+    } catch (err) { return null; }
+  }
+
+  // Nach Änderungen nur die Karten in der Vorschau neu zeichnen (kein
+  // Neuladen der Seite -> die Vorschau bleibt an der aktuellen Stelle).
+  async function refreshPreviewCards(){
+    const frame = document.getElementById('contentPreviewFrame');
+    const win = frame && frame.contentWindow;
+    try {
+      if (win && typeof win.loadSiteCards === 'function'){
+        await win.loadSiteCards();
+        decoratePreviewCards();
+        return;
+      }
+    } catch (err) { /* Fallback unten */ }
+    reloadContentPreview();
+  }
+
+  function decoratePreviewCards(){
+    const doc = getPreviewDoc();
+    if (!doc || !doc.head) return;
+
+    if (!doc.getElementById('cms-card-tools-style')){
+      const st = doc.createElement('style');
+      st.id = 'cms-card-tools-style';
+      st.textContent = `
+        [data-card-id] .t-card, [data-card-id] .testi{position:relative;cursor:pointer;transition:box-shadow .12s ease;}
+        [data-card-id] .t-card:hover, [data-card-id] .testi:hover{box-shadow:0 0 0 2.5px #F3A9C4, 0 0 0 7px rgba(243,169,196,0.25);}
+        .cms-card-tools{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:20;opacity:0.85;}
+        [data-card-id]:hover .cms-card-tools{opacity:1;}
+        .cms-card-tools button{width:30px;height:30px;border-radius:9px;border:none;cursor:pointer;
+          background:#143F64;color:#fff;font:700 14px/1 sans-serif;display:flex;align-items:center;justify-content:center;
+          box-shadow:0 4px 10px -4px rgba(20,63,100,0.5);}
+        .cms-card-tools button:hover{background:#2C567E;}
+        .cms-card-tools button.cms-del:hover{background:#B3324A;}
+        .cms-card-tools button:disabled{opacity:0.3;cursor:default;}
+        .cms-add-card{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:780px;
+          margin:18px 0 0;padding:16px;border:2px dashed #143F64;border-radius:18px;background:rgba(255,255,255,0.55);
+          color:#143F64;font:800 14px/1.2 sans-serif;cursor:pointer;}
+        .cms-add-card:hover{background:#fff;}
+        .testi-slider + .cms-add-card{max-width:none;}
+        #cookieBanner{display:none!important;} /* nur in der Admin-Vorschau */
+      `;
+      doc.head.appendChild(st);
+    }
+
+    Object.keys(CARD_SECTIONS).forEach(section => {
+      const container = doc.querySelector(`[data-cms-list="${section}"]`);
+      if (!container) return;
+      const list = cardsBySection[section];
+      const horizontal = section === 'stimmen';
+
+      container.querySelectorAll('[data-card-id]').forEach(item => {
+        const id = item.getAttribute('data-card-id');
+        const target = item.querySelector(horizontal ? '.testi' : '.t-card') || item;
+        target.querySelectorAll('.cms-card-tools').forEach(t => t.remove());
+        const idx = list.findIndex(c => c.id === id);
+        if (idx < 0) return;
+
+        const tools = doc.createElement('div');
+        tools.className = 'cms-card-tools';
+        const mk = (label, title, cls, fn, disabled) => {
+          const b = doc.createElement('button');
+          b.type = 'button'; b.textContent = label; b.title = title;
+          if (cls) b.className = cls;
+          if (disabled) b.disabled = true;
+          b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); fn(); });
+          tools.appendChild(b);
+        };
+        mk(horizontal ? '←' : '↑', horizontal ? 'Nach links' : 'Nach oben', '', () => moveCardById(section, id, -1), idx === 0);
+        mk(horizontal ? '→' : '↓', horizontal ? 'Nach rechts' : 'Nach unten', '', () => moveCardById(section, id, 1), idx === list.length - 1);
+        mk('✕', 'Karte löschen', 'cms-del', () => {
+          const i = cardsBySection[section].findIndex(c => c.id === id);
+          if (i > -1) deleteCard(section, i);
+        });
+        target.appendChild(tools);
+
+        if (!item.dataset.cmsWired){
+          item.dataset.cmsWired = '1';
+          item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const row = cardsBySection[section].find(c => c.id === id);
+            if (row) openCardModal(section, row);
+          });
+        }
+      });
+
+      // „+ Neue Karte" unter dem Bereich (einmalig)
+      if (!doc.getElementById('cms-add-' + section)){
+        const add = doc.createElement('button');
+        add.type = 'button';
+        add.id = 'cms-add-' + section;
+        add.className = 'cms-add-card';
+        add.textContent = '+ Neue Karte' + (horizontal ? ' (Stimme)' : '');
+        add.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openCardModal(section); });
+        const anchor = horizontal ? (container.closest('.testi-slider') || container) : container;
+        anchor.after(add);
+      }
+    });
+  }
+
+  function moveCardById(section, id, dir){
+    const i = cardsBySection[section].findIndex(c => c.id === id);
+    if (i > -1) moveCard(section, i, dir);
   }
 
   /* ---------- Reihenfolge: Ziehen & Ablegen (Desktop) ---------- */
@@ -2816,7 +2923,7 @@
     list.forEach((c, idx) => { c.sort_order = (idx + 1) * 10; });
     renderCardList(section); // sofort anzeigen, dann speichern
 
-    if (demoMode) return;
+    if (demoMode){ decoratePreviewCards(); return; }
 
     // Nur id/section/sort_order schicken: Upsert aktualisiert gezielt diese Spalten.
     const { error } = await sb.from('site_cards').upsert(
@@ -2828,7 +2935,7 @@
       loadCards();
       return;
     }
-    reloadContentPreview();
+    refreshPreviewCards();
   }
 
   /* ---------- Karte anlegen / bearbeiten ---------- */
@@ -2989,7 +3096,7 @@
     if (error){ alert('Fehler beim Speichern: ' + error.message); return; }
     closeCardModal();
     await loadCards();
-    reloadContentPreview();
+    refreshPreviewCards();
   });
 
   /* ---------- Karte löschen ---------- */
@@ -3006,7 +3113,7 @@
     const { error } = await sb.from('site_cards').delete().eq('id', card.id);
     if (error){ alert('Fehler beim Löschen: ' + error.message); return false; }
     await loadCards();
-    reloadContentPreview();
+    refreshPreviewCards();
     return true;
   }
 
@@ -3031,7 +3138,9 @@
   // Bereiche ohne Karten automatisch aus der Website befüllen, damit die
   // vorhandenen Karten sofort im Admin auftauchen und bearbeitbar sind.
   function maybeAutoImportCards(){
-    if (demoMode || !cardsLoaded) return;
+    // Nur beim allerersten Mal (Tabelle komplett leer). Wurden später alle
+    // Karten eines Bereichs bewusst gelöscht, wird nichts neu importiert.
+    if (demoMode || !cardsLoaded || cardsTotal > 0) return;
     Object.keys(CARD_SECTIONS).forEach(section => {
       if (cardsBySection[section].length === 0 && !cardsImporting[section]){
         importCardsFromWebsite(section, true);
@@ -3125,7 +3234,7 @@
 
     const { error } = await sb.from('site_cards').insert(rows);
     if (error){ alert('Fehler beim Übernehmen der Karten: ' + error.message); return; }
-    reloadContentPreview();
+    refreshPreviewCards();
     } finally {
       cardsImporting[section] = 'done';
       await loadCards();
